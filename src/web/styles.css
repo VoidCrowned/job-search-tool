@@ -1,4 +1,6 @@
 :root {
+  /* One step smaller than the browser default (15px instead of 16px); all sizes below are in rem, so they follow. */
+  font-size: 93.75%;
   color-scheme: light;
   --bg: #f6f7f9;
   --surface: #ffffff;
@@ -154,7 +156,7 @@ label.check { display: inline-flex; gap: 0.4rem; align-items: center; font-size:
 .page-tools button {
   font: inherit;
   padding: 0.5rem 0.9rem;
-  border-radius: 999px;
+  border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
