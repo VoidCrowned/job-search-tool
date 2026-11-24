@@ -6,3 +6,4 @@ dist/
 # Personal data (profile, CV, generated letters) – never committed
 data/
 *.log
+*.tsbuildinfo
