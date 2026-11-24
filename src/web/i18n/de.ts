@@ -54,6 +54,8 @@ export const de: Messages = {
     publishedOn: (date) => `Veröffentlicht am ${date}`,
     homeOffice: 'Homeoffice',
     externalAd: 'Externe Anzeige',
+    openAsPage: 'Als eigene Seite öffnen',
+    collapse: 'Zuklappen',
   },
 
   options: {

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { App } from './App.tsx';
 import { renderMarkdown } from './markdown.ts';
+import { clearJobDetailsCache } from './jobDetails.ts';
 import detailsFixture from '../api/fixtures/details.json';
 
 function mockFetch(body: unknown, status = 200) {
@@ -15,6 +16,7 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   sessionStorage.clear();
+  clearJobDetailsCache();
   localStorage.clear();
 });
 

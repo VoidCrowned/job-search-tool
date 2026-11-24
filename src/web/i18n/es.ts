@@ -54,6 +54,8 @@ export const es: Messages = {
     publishedOn: (date) => `Publicado el ${date}`,
     homeOffice: 'Teletrabajo',
     externalAd: 'Anuncio externo',
+    openAsPage: 'Abrir como página',
+    collapse: 'Contraer',
   },
 
   options: {

@@ -57,6 +57,8 @@ export const en = {
     publishedOn: (date: string) => `Published ${date}`,
     homeOffice: 'Home office',
     externalAd: 'External ad',
+    openAsPage: 'Open as page',
+    collapse: 'Collapse',
   },
 
   options: {
