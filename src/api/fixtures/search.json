@@ -1,0 +1,183 @@
+{
+  "ergebnisliste": [
+    {
+      "stellenangebotsart": "ARBEIT",
+      "stellenangebotsTitel": "Pflegefachkraft (m/w/d) für ambulante Pflege in Hamburg",
+      "arbeitszeitSchichtNachtWochenende": false,
+      "arbeitszeitTeilzeitAbend": false,
+      "arbeitszeitTeilzeitNachmittag": false,
+      "arbeitszeitTeilzeitVormittag": false,
+      "arbeitszeitTeilzeitFlexibel": false,
+      "arbeitszeitVollzeit": true,
+      "eintrittszeitraum": {
+        "von": "2026-11-03"
+      },
+      "verguetungsangabe": "KEINE_ANGABEN",
+      "vertragsdauer": "UNBEFRISTET",
+      "stellenlokationen": [
+        {
+          "adresse": {
+            "strasse": "Hallerstr.",
+            "hausnummer": "54",
+            "plz": "20146",
+            "ort": "Hamburg",
+            "region": "HAMBURG",
+            "land": "DEUTSCHLAND"
+          },
+          "breite": 53.572293,
+          "laenge": 9.9839475
+        }
+      ],
+      "veroeffentlichungszeitraum": {
+        "von": "2026-10-21"
+      },
+      "datumErsteVeroeffentlichung": "2026-10-21",
+      "aenderungsdatum": "2026-11-03T09:31:15.762",
+      "hauptberuf": "Pflegefachmann/-frau (Ausbildung)",
+      "alternativBeruf1": "Pflegefachmann/-frau (Gesundheits- und Krankenpflege)",
+      "firma": "AlsterHerz Pflege GmbH",
+      "arbeitgeberKundennummerHash": "xQntnSUfEiGKKdxWmme1aFLB-66I_TK9h6Bjjtz0tIE=",
+      "referenznummer": "10001-1003891045-S",
+      "entfernung": 1,
+      "alleBerufe": [
+        "Pflegefachmann/-frau (Ausbildung)",
+        "Pflegefachmann/-frau (Gesundheits- und Krankenpflege)"
+      ]
+    },
+    {
+      "stellenangebotsart": "ARBEIT",
+      "stellenangebotsTitel": "Landesreferent*in Pflege (m/w/d)",
+      "quereinstiegGeeignet": false,
+      "arbeitszeitSchichtNachtWochenende": false,
+      "arbeitszeitTeilzeitAbend": true,
+      "arbeitszeitTeilzeitNachmittag": true,
+      "arbeitszeitTeilzeitVormittag": true,
+      "arbeitszeitTeilzeitFlexibel": false,
+      "arbeitszeitVollzeit": false,
+      "eintrittszeitraum": {
+        "von": "2026-11-03"
+      },
+      "verguetungsangabe": "KEINE_ANGABEN",
+      "vertragsdauer": "UNBEFRISTET",
+      "istGeringfuegigeBeschaeftigung": false,
+      "stellenlokationen": [
+        {
+          "adresse": {
+            "strasse": "Behrmannplatz 3",
+            "plz": "22529",
+            "ort": "Hamburg",
+            "region": "HAMBURG",
+            "land": "DEUTSCHLAND"
+          },
+          "breite": 53.599464,
+          "laenge": 9.9578835
+        }
+      ],
+      "homeofficemoeglich": true,
+      "homeofficetyp": "NACH_VEREINBARUNG",
+      "veroeffentlichungszeitraum": {
+        "von": "2026-11-03"
+      },
+      "datumErsteVeroeffentlichung": "2026-11-03",
+      "aenderungsdatum": "2026-11-03T07:03:36.416",
+      "externeURL": "https://www.heyjobs.co/de-de/jobs/4a19f40c-d84a-4349-a824-20c7eb5e3c80?utm_content=ad_link&utm_medium=sjm-pr&utm_source=jobboerse",
+      "hauptberuf": "Gesundheitsberater/in",
+      "firma": "Deutsches Rotes Kreuz Landesverband Hamburg e.V.",
+      "referenznummer": "12951-4a19f40c-d84a-4349--S",
+      "entfernung": 4,
+      "alleBerufe": [
+        "Gesundheitsberater/in"
+      ]
+    },
+    {
+      "stellenangebotsart": "ARBEIT",
+      "stellenangebotsTitel": "Pflegefachkraft (m/w/d) - Ambulante Pflege",
+      "arbeitszeitSchichtNachtWochenende": false,
+      "arbeitszeitTeilzeitAbend": true,
+      "arbeitszeitTeilzeitNachmittag": true,
+      "arbeitszeitTeilzeitVormittag": true,
+      "arbeitszeitTeilzeitFlexibel": false,
+      "arbeitszeitVollzeit": true,
+      "eintrittszeitraum": {
+        "von": "2026-11-18"
+      },
+      "verguetungsangabe": "STUNDENLOHN",
+      "artDerVerguetung": "GEHALTSSPANNE",
+      "gehaltsspanneVon": 28.0,
+      "gehaltsspanneBis": 30.0,
+      "vertragsdauer": "UNBEFRISTET",
+      "stellenlokationen": [
+        {
+          "adresse": {
+            "strasse": "Rothenbaumchaussee",
+            "hausnummer": "105",
+            "plz": "20148",
+            "ort": "Hamburg",
+            "region": "HAMBURG",
+            "land": "DEUTSCHLAND"
+          },
+          "breite": 53.571402,
+          "laenge": 9.988245
+        }
+      ],
+      "veroeffentlichungszeitraum": {
+        "von": "2026-08-26"
+      },
+      "datumErsteVeroeffentlichung": "2026-08-26",
+      "aenderungsdatum": "2026-11-18T13:51:59.582",
+      "hauptberuf": "Pflegefachmann/-frau (Altenpflege)",
+      "alternativBeruf1": "Gesundheits- und Krankenpfleger/in",
+      "alternativBeruf2": "Krankenschwester/-pfleger",
+      "firma": "Kranken- und Seniorenbetreuung Anna GmbH",
+      "arbeitgeberKundennummerHash": "0owqjf7Ui0eBIOkGXfH7NRo7ll6WMjKz1FIdN3SkYCk=",
+      "referenznummer": "10001-1003602029-S",
+      "entfernung": 1,
+      "alleBerufe": [
+        "Pflegefachmann/-frau (Altenpflege)",
+        "Gesundheits- und Krankenpfleger/in",
+        "Krankenschwester/-pfleger"
+      ]
+    }
+  ],
+  "maxErgebnisse": 3842,
+  "page": 1,
+  "size": 3,
+  "woOutput": {
+    "bereinigterOrt": "Hamburg",
+    "suchmodus": "UMKREISSUCHE",
+    "koordinaten": [
+      {
+        "lat": 53.567403,
+        "lon": 9.99749995
+      }
+    ]
+  },
+  "facetten": {
+    "arbeitszeit": {
+      "counts": {
+        "mj": 67,
+        "snw": 498,
+        "tz": 1287,
+        "vz": 3233
+      },
+      "maxCount": 3842
+    },
+    "befristung": {
+      "counts": {
+        "1": 137,
+        "2": 2590,
+        "3": 1115
+      },
+      "maxCount": 3842
+    },
+    "angebotsart": {
+      "counts": {
+        "1": 3577,
+        "2": 14,
+        "34": 50,
+        "4": 201
+      },
+      "maxCount": 3842
+    }
+  }
+}
