@@ -89,3 +89,34 @@ label.check { display: inline-flex; gap: 0.4rem; align-items: center; font-size:
 .badge { background: var(--badge); border-radius: 999px; padding: 0.1rem 0.6rem; font-size: 0.8rem; }
 .badge.muted { background: transparent; border: 1px solid var(--border); color: var(--muted); }
 .pager { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; color: var(--muted); }
+
+/* Job details */
+.back { display: inline-block; margin-bottom: 1rem; text-decoration: none; }
+.job-header { display: flex; gap: 1rem; align-items: center; }
+.job-header h1 { margin: 0; font-size: 1.5rem; line-height: 1.25; }
+.job-header .company { margin: 0.25rem 0 0; color: var(--muted); }
+.logo { width: 72px; height: 72px; object-fit: contain; background: #fff; border-radius: 8px; border: 1px solid var(--border); padding: 4px; flex: none; }
+.actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 1rem 0; }
+.button {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  text-decoration: none;
+  background: var(--surface);
+}
+.button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.75rem 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem;
+  margin: 0 0 1.25rem;
+}
+.facts dt { font-size: 0.8rem; color: var(--muted); }
+.facts dd { margin: 0; }
+.description { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.5rem 1.25rem; overflow-wrap: anywhere; }
+.description h1, .description h2, .description h3 { font-size: 1.1rem; margin: 1.25rem 0 0.5rem; }
