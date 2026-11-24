@@ -1,6 +1,4 @@
 :root {
-  /* One step smaller than the browser default (15px instead of 16px); all sizes below are in rem, so they follow. */
-  font-size: 93.75%;
   color-scheme: light;
   --bg: #f6f7f9;
   --surface: #ffffff;
@@ -106,7 +104,7 @@ label.check { display: inline-flex; gap: 0.4rem; align-items: center; font-size:
 .company { color: var(--text); }
 .badges { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.4rem; }
 .badges:empty { display: none; }
-.badge { background: var(--badge); border-radius: 999px; padding: 0.1rem 0.6rem; font-size: 0.8rem; }
+.badge { background: var(--badge); border-radius: 4px; padding: 0.1rem 0.6rem; font-size: 0.8rem; }
 .badge.muted { background: transparent; border: 1px solid var(--border); color: var(--muted); }
 .pager { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; color: var(--muted); }
 
