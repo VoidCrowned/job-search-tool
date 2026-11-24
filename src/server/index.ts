@@ -3,6 +3,9 @@ import { serveStatic } from '@hono/node-server/serve-static';
 import { existsSync } from 'node:fs';
 import { createApp } from './app.ts';
 
+// Secrets such as ANTHROPIC_API_KEY live in .env (never committed). Variables already set in the shell win.
+if (existsSync('.env')) process.loadEnvFile('.env');
+
 const port = Number(process.env.PORT ?? 8787);
 const app = createApp();
 

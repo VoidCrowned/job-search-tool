@@ -9,14 +9,20 @@ import { onLinkClick } from './router.ts';
 
 export const LETTER_ANCHOR = 'letter';
 
+interface AiConfig {
+  ai: boolean;
+  model?: string;
+}
+
 interface Loaded {
   file: LetterFile;
   profile: Profile;
+  config: AiConfig;
 }
 
 type Status =
   | { kind: 'idle' }
-  | { kind: 'working' }
+  | { kind: 'working'; mode?: 'ai' | 'template' }
   | { kind: 'saved' }
   | { kind: 'copied' }
   | { kind: 'copyFailed' }
@@ -34,13 +40,14 @@ export function LetterPanel({ refnr }: { refnr: string }) {
     let active = true;
     (async () => {
       try {
-        const [file, profile] = await Promise.all([
+        const [file, profile, config] = await Promise.all([
           getJson<LetterFile>(`/api/letters/${encodeURIComponent(refnr)}`),
           getJson<Profile>('/api/profile'),
+          getJson<AiConfig>('/api/config'),
         ]);
         if (!Array.isArray(file?.versions)) throw new RequestError(500, 'Unexpected answer from the server.');
         if (!active) return;
-        setLoaded({ file, profile });
+        setLoaded({ file, profile, config });
         // Jobs that already have a letter open straight away.
         if (file.versions.length) setOpen(true);
       } catch (err) {
@@ -67,12 +74,12 @@ export function LetterPanel({ refnr }: { refnr: string }) {
         )}
       </div>
       {open && loaded && 'error' in loaded && <p className="error">{errorText(loaded.error, t)}</p>}
-      {open && loaded && 'file' in loaded && <LetterEditor refnr={refnr} initial={loaded.file} profile={loaded.profile} />}
+      {open && loaded && 'file' in loaded && <LetterEditor refnr={refnr} initial={loaded.file} profile={loaded.profile} config={loaded.config} />}
     </section>
   );
 }
 
-function LetterEditor({ refnr, initial, profile }: { refnr: string; initial: LetterFile; profile: Profile }) {
+function LetterEditor({ refnr, initial, profile, config }: { refnr: string; initial: LetterFile; profile: Profile; config: AiConfig }) {
   const t = useT();
   const [file, setFile] = useState(initial);
   const latest: LetterVersion | undefined = file.versions[file.versions.length - 1];
@@ -99,11 +106,11 @@ function LetterEditor({ refnr, initial, profile }: { refnr: string; initial: Let
     setStatus({ kind: 'idle' });
   }
 
-  async function generate() {
+  async function generate(mode: 'ai' | 'template') {
     if (dirty && !window.confirm(t.letter.replaceConfirm)) return;
-    setStatus({ kind: 'working' });
+    setStatus({ kind: 'working', mode });
     try {
-      show(await sendJson(`POST`, `${url}/generate`, { language }), { kind: 'idle' });
+      show(await sendJson('POST', `${url}/generate`, { language, mode }), { kind: 'idle' });
     } catch (err) {
       setStatus({ kind: 'error', error: toRequestError(err) });
     }
@@ -163,11 +170,27 @@ function LetterEditor({ refnr, initial, profile }: { refnr: string; initial: Let
             <option value="en">{t.letter.languageEn}</option>
           </select>
         </label>
-        <button type="button" className="primary" onClick={generate} disabled={status.kind === 'working'}>
-          {status.kind === 'working' ? t.letter.working : t.letter.fillTemplate}
+        {config.ai && (
+          <button type="button" className="primary" onClick={() => generate('ai')} disabled={status.kind === 'working'}>
+            {status.kind === 'working' && status.mode === 'ai' ? t.letter.working : t.letter.writeWithClaude}
+          </button>
+        )}
+        <button
+          type="button"
+          className={config.ai ? 'button' : 'primary'}
+          onClick={() => generate('template')}
+          disabled={status.kind === 'working'}
+        >
+          {status.kind === 'working' && status.mode === 'template' ? t.letter.working : t.letter.fillTemplate}
         </button>
       </div>
-      <p className="hint">{t.letter.templateHint}</p>
+      {config.ai ? (
+        <p className="hint">{t.letter.aiHint(config.model ?? 'Claude')}</p>
+      ) : (
+        <p className="hint">
+          {t.letter.templateHint} {t.letter.keyHint}
+        </p>
+      )}
       {!current && status.kind === 'error' && (
         <p className="error" aria-live="polite">
           {errorText(status.error, t)}
