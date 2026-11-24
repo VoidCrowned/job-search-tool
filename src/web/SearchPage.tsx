@@ -22,6 +22,10 @@ import { rememberSearch } from './lastSearch.ts';
 import { clearResultsView, readResultsView, saveResultsView } from './resultsView.ts';
 import { navigate, onBeforeNavigate, onLinkClick } from './router.ts';
 
+/** Space (px) kept above a card that is scrolled back into view after collapsing. */
+const COLLAPSE_MARGIN = 12;
+const cardId = (refnr: string) => `card-${refnr}`;
+
 function hasSearch(p: SearchParams) {
   return Boolean(p.was || p.wo || p.berufsfeld || p.arbeitgeber);
 }
@@ -209,12 +213,33 @@ function Results({ query, data, params }: { query: string; data: SearchResponse;
       window.removeEventListener('popstate', save);
     };
   }, [query]);
-  const toggle = (refnr: string) =>
+
+  // Collapsing makes the page shorter while the scroll offset stays, which would drop you far below
+  // the card. So after a collapse, the "anchor" card is scrolled back to the top of the screen if needed.
+  const anchorRef = useRef<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    const anchor = anchorRef.current;
+    anchorRef.current = null;
+    if (!anchor) return;
+    const top = anchor.getBoundingClientRect().top;
+    if (top < COLLAPSE_MARGIN) window.scrollBy(0, top - COLLAPSE_MARGIN);
+  }, [expanded]);
+
+  const toggle = (refnr: string) => {
+    if (expanded.has(refnr)) anchorRef.current = document.getElementById(cardId(refnr));
     setExpanded((prev) => {
       const next = new Set(prev);
       if (!next.delete(refnr)) next.add(refnr);
       return next;
     });
+  };
+
+  const collapseAll = () => {
+    // Keep the card that is currently at the top of the screen in place.
+    anchorRef.current =
+      [...document.querySelectorAll<HTMLElement>('.job-card')].find((el) => el.getBoundingClientRect().bottom > 0) ?? null;
+    setExpanded(new Set());
+  };
   if (data.maxErgebnisse === 0 || items.length === 0) {
     return <p className="hint">{t.search.noResults}</p>;
   }
@@ -254,7 +279,7 @@ function Results({ query, data, params }: { query: string; data: SearchResponse;
           <span />
         )}
       </nav>
-      <PageTools expandedCount={expanded.size} onCollapseAll={() => setExpanded(new Set())} />
+      <PageTools expandedCount={expanded.size} onCollapseAll={collapseAll} />
     </>
   );
 }
@@ -275,7 +300,7 @@ function JobCard({ job, expanded, onToggle }: { job: JobSearchItem; expanded: bo
   }
 
   return (
-    <li className={expanded ? 'job-card expanded' : 'job-card'}>
+    <li className={expanded ? 'job-card expanded' : 'job-card'} id={cardId(job.referenznummer)}>
       <a className="job-title" href={href} onClick={onTitleClick} aria-expanded={expanded} aria-controls={bodyId}>
         {job.stellenangebotsTitel}
       </a>
