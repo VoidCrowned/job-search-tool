@@ -78,6 +78,22 @@ export const en = {
     switchConfirm: 'Discard your unsaved changes and open this version?',
   },
 
+  ats: {
+    title: 'ATS check',
+    intro: 'Applicant tracking systems read letters automatically. These checks help yours get through.',
+    length: (words: number) => `Length: ${words} words (aim for about 180–500, one page)`,
+    plainText: 'Plain text: no Markdown, tables or tabs',
+    symbols: 'No emoji or decorative symbols (bullets, arrows, stars)',
+    placeholders: (n: number) => (n ? `${n} placeholder${n === 1 ? '' : 's'} still to fill in` : 'No placeholders left'),
+    company: 'Names the company',
+    jobTitle: 'Names the job title',
+    keywords: (found: number, total: number) => `Key terms from the ad: ${found} of ${total}`,
+    missing: (list: string) => `Missing: ${list}`,
+    noKeywords: 'Key terms from the ad are only checked for letters written by Claude.',
+    ok: 'OK',
+    fix: 'Check',
+  },
+
   theme: {
     label: 'Theme',
     system: 'System',

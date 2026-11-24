@@ -39,6 +39,7 @@ describe('buildPrompt', () => {
     expect(ad).toContain('Gemeinsam die Pflege von morgen gestalten');
     expect(user).toContain('"24. November 2026"');
     expect(user).toMatch(/German, using the formal "Sie"/);
+    expect(user).toMatch(/ATS-friendly.*no Markdown, tables, columns, tabs, emoji/);
   });
 
   it('uses English rules for English letters', () => {
