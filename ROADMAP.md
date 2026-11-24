@@ -7,7 +7,7 @@
 ## M2: Search website
 - [x] Local API proxy (#3)
 - [x] Search page (#4)
-- [ ] Job details view (#5)
+- [x] Job details view (#5)
 
 ## M3: Application texts
 - [ ] Local profile (#6)

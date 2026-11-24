@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import {
   ANGEBOTSART,
   ARBEITSZEIT,
@@ -16,6 +16,7 @@ import {
 import type { JobSearchItem, SearchResponse } from '../api/types.ts';
 import { useJson } from './api.ts';
 import { formatDate, formatPay, formatPlace } from './format.ts';
+import { rememberSearch } from './lastSearch.ts';
 import { navigate, onLinkClick } from './router.ts';
 
 const PUBLISHED_LABELS: Record<number, string> = { 0: 'Today', 1: 'Since yesterday', 7: 'Last 7 days', 14: 'Last 14 days', 28: 'Last 28 days' };
@@ -28,6 +29,11 @@ export function SearchPage({ search }: { search: string }) {
   const { params } = parseSearchParams(new URLSearchParams(search));
   const query = toAppQuery(params).toString();
   const result = useJson<SearchResponse>(hasSearch(params) ? `/api/jobs?${query}` : null);
+
+  useEffect(() => {
+    rememberSearch(query ? `?${query}` : '');
+    document.title = params.was || params.wo ? `${[params.was, params.wo].filter(Boolean).join(' in ')} · Jobsuche` : 'Jobsuche';
+  }, [query, params.was, params.wo]);
 
   return (
     <>
