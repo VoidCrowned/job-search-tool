@@ -2,7 +2,8 @@
 // Usage: npm run letter:check -- --ai      Prints one JSON object; exit code 1 if a check fails.
 import { existsSync } from 'node:fs';
 import { aiConfigFromEnv, createClaudeGenerator } from '../src/server/letter/claude.ts';
-import { emptyProfile } from '../src/shared/profile.ts';
+import { parseProfile } from '../src/shared/profile.ts';
+import exampleProfile from '../examples/profile.example.json' with { type: 'json' };
 import type { JobDetails } from '../src/api/types.ts';
 import job from '../src/api/fixtures/details.json' with { type: 'json' };
 
@@ -17,15 +18,8 @@ if (!process.argv.includes('--ai')) done({ error: 'This check calls Claude and c
 const config = aiConfigFromEnv();
 if (!config.apiKey) done({ error: 'No ANTHROPIC_API_KEY found (environment or .env).' }, false);
 
-// A fictional candidate: no real personal data is sent.
-const profile = {
-  ...emptyProfile(),
-  name: 'Alex Beispiel',
-  city: 'Hamburg',
-  desiredRoles: 'Referent/in im Gesundheitswesen',
-  skills: 'Pflegeplanung, Qualitätsmanagement, Projektkoordination',
-  cv: '2019–2025 Pflegefachkraft, Klinikum Musterstadt. 2025 Weiterbildung Qualitätsmanagement im Gesundheitswesen.',
-};
+// The fictional example profile: no real personal data is sent.
+const profile = parseProfile(exampleProfile).profile;
 
 const started = Date.now();
 try {
@@ -34,7 +28,7 @@ try {
     hasLetter: result.letter.length > 300,
     namesCompany: result.letter.includes((job as JobDetails).firma ?? '__'),
     namesReference: result.letter.includes(job.referenznummer),
-    usesCandidateName: result.letter.includes('Alex Beispiel'),
+    usesCandidateName: result.letter.includes(profile.name),
     germanGreeting: /Sehr geehrte/.test(result.letter),
     noPromptLeak: !/<\/?(job_ad|candidate_profile)>/.test(result.letter),
     keywords: result.adKeywords.length >= 3,

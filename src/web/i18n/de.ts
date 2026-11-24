@@ -43,6 +43,10 @@ export const de: Messages = {
     saved: 'Gespeichert.',
     unsaved: 'Ungespeicherte Änderungen',
     loading: 'Profil wird geladen…',
+    loadExample: 'Beispielprofil laden',
+    exampleHint: 'Füllt das Formular mit einer erfundenen Person (Alex Beispiel), damit du alles ohne eigene Daten ausprobieren kannst. Gespeichert wird erst, wenn du auf Speichern drückst.',
+    replaceConfirm: 'Den Inhalt des Formulars durch das Beispielprofil ersetzen?',
+    exampleLoaded: 'Beispiel geladen. Drücke Speichern, um es zu verwenden.',
   },
 
   letter: {

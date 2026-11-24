@@ -1,0 +1,13 @@
+{
+  "name": "Alex Beispiel",
+  "email": "alex.beispiel@example.org",
+  "phone": "040 1234567",
+  "street": "Musterweg 12",
+  "postcode": "20095",
+  "city": "Hamburg",
+  "desiredRoles": "Junior-Webentwickler/in, Frontend-Entwickler/in, IT-Support mit Entwicklungsanteil",
+  "skills": "JavaScript, TypeScript, React\nHTML, CSS, barrierefreies Webdesign\nGit, GitHub, Code-Reviews\nREST-APIs, SQL (Grundlagen)\nAgile Arbeit mit Scrum",
+  "languages": "Deutsch (Muttersprache), Englisch (C1)",
+  "notes": "Verfügbar ab 1. Februar 2027. Interesse an öffentlichen und gemeinnützigen Arbeitgebern. Hybrides Arbeiten bevorzugt.",
+  "cv": "Alex Beispiel – Lebenslauf (fiktives Beispiel)\n\nBerufserfahrung\n2024–heute: Werkstudent/in Webentwicklung, Musterfirma GmbH, Hamburg. Entwicklung von React-Komponenten für ein Kundenportal, Umstellung auf TypeScript, Einführung automatisierter Tests (Vitest).\n2021–2024: IT-Support (Teilzeit), Stadtbibliothek Musterstadt. Betreuung von 40 Arbeitsplätzen, Pflege der Website, Schulungen für Mitarbeitende.\n\nAusbildung\n2020–2025: B.Sc. Medieninformatik, Hochschule Musterstadt. Abschlussarbeit: Barrierefreiheit in Single-Page-Anwendungen.\n\nProjekte\nJobsuche-Tool: lokale Web-App für Stellenanzeigen der Bundesagentur für Arbeit (React, Node, TypeScript).\n\nKenntnisse\nJavaScript, TypeScript, React, Node.js, HTML/CSS, Git, SQL-Grundlagen, Scrum."
+}
