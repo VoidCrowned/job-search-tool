@@ -3,20 +3,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { App } from './App.tsx';
 import { clearJobDetailsCache } from './jobDetails.ts';
+import { fakeApi } from './testing/fakeApi.ts';
 import { SCROLL_THRESHOLD } from './PageTools.tsx';
 import searchFixture from '../api/fixtures/search.json';
-import detailsFixture from '../api/fixtures/details.json';
 
 const [first, second] = searchFixture.ergebnisliste;
 
 function routeFetch() {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (url: string) => {
-      const body = url.startsWith('/api/jobs?') ? searchFixture : detailsFixture;
-      return new Response(JSON.stringify(body), { headers: { 'Content-Type': 'application/json' } });
-    }),
-  );
+  fakeApi();
 }
 
 function scrollTo(y: number) {

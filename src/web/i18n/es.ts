@@ -45,6 +45,29 @@ export const es: Messages = {
     loading: 'Cargando perfil…',
   },
 
+  letter: {
+    title: 'Carta de presentación',
+    open: 'Escribir candidatura',
+    language: 'Idioma de la carta',
+    languageAuto: 'Automático (según el anuncio)',
+    languageDe: 'Alemán',
+    languageEn: 'Inglés',
+    fillTemplate: 'Rellenar plantilla',
+    working: 'Redactando…',
+    templateHint: 'Sin clave de API obtienes una plantilla rellenada con tu perfil. Las partes entre [corchetes] las completas tú.',
+    profileEmpty: 'Tu perfil está vacío, así que la carta tendrá sobre todo marcadores.',
+    editProfile: 'Completar tu perfil',
+    textLabel: 'Texto de la carta',
+    save: 'Guardar cambios',
+    saved: 'Guardado.',
+    unsaved: 'Cambios sin guardar',
+    copy: 'Copiar',
+    copied: 'Copiado.',
+    copyFailed: 'No se ha podido copiar. Selecciona el texto y pulsa Ctrl+C.',
+    replaceConfirm: '¿Sustituir tus cambios sin guardar por una carta nueva?',
+    placeholdersLeft: (n) => `Quedan ${n} marcadores por completar: busca los [corchetes].`,
+  },
+
   theme: {
     label: 'Tema',
     system: 'Sistema',
@@ -83,6 +106,7 @@ export const es: Messages = {
   },
 
   card: {
+    writeApplication: 'Escribir candidatura',
     publishedOn: (date) => `Publicado el ${date}`,
     homeOffice: 'Teletrabajo',
     externalAd: 'Anuncio externo',

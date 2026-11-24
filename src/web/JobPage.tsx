@@ -4,6 +4,7 @@ import { errorText } from './api.ts';
 import { useT } from './i18n/index.tsx';
 import { JobDetailsView } from './JobDetailsView.tsx';
 import { useJobDetails } from './jobDetails.ts';
+import { LetterPanel } from './LetterPanel.tsx';
 import { lastSearchHref } from './lastSearch.ts';
 import { onLinkClick } from './router.ts';
 
@@ -32,7 +33,7 @@ export function JobPage({ refnr }: { refnr: string }) {
           )}
         </p>
       )}
-      {result.state === 'done' && <JobDetailsView job={result.data} />}
+      {result.state === 'done' && <JobDetailsView job={result.data} beforeDescription={<LetterPanel refnr={refnr} />} />}
     </article>
   );
 }

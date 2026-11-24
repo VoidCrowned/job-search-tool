@@ -1,12 +1,20 @@
 // Local file storage for personal data (profile, letters). Lives in data/ by default, which git ignores.
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { MAX_VERSIONS, type LetterFile } from '../shared/letter.ts';
 import { emptyProfile, parseProfile, type Profile } from '../shared/profile.ts';
 
 export interface Storage {
   readonly dir: string;
   readProfile(): Promise<Profile>;
   writeProfile(profile: Profile): Promise<void>;
+  readLetters(refnr: string): Promise<LetterFile | undefined>;
+  writeLetters(file: LetterFile): Promise<void>;
+}
+
+/** Reference numbers become file names: keep only safe characters. */
+export function letterFileName(refnr: string): string {
+  return `${refnr.replace(/[^A-Za-z0-9._-]/g, '_')}.json`;
 }
 
 async function readJson(path: string): Promise<unknown | undefined> {
@@ -27,6 +35,7 @@ async function writeJson(path: string, data: unknown): Promise<void> {
 
 export function createStorage(dir: string = process.env.DATA_DIR ?? 'data'): Storage {
   const profilePath = join(dir, 'profile.json');
+  const lettersDir = join(dir, 'letters');
   const ensureDir = () => mkdir(dir, { recursive: true });
 
   return {
@@ -39,6 +48,15 @@ export function createStorage(dir: string = process.env.DATA_DIR ?? 'data'): Sto
     async writeProfile(profile) {
       await ensureDir();
       await writeJson(profilePath, profile);
+    },
+    async readLetters(refnr) {
+      const raw = (await readJson(join(lettersDir, letterFileName(refnr)))) as LetterFile | undefined;
+      return raw && Array.isArray(raw.versions) ? raw : undefined;
+    },
+    async writeLetters(file) {
+      await mkdir(lettersDir, { recursive: true });
+      const versions = file.versions.slice(-MAX_VERSIONS);
+      await writeJson(join(lettersDir, letterFileName(file.refnr)), { ...file, versions });
     },
   };
 }

@@ -184,3 +184,13 @@ label.check { display: inline-flex; gap: 0.4rem; align-items: center; font-size:
 textarea { font: inherit; padding: 0.5rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); resize: vertical; }
 .form-actions { display: flex; gap: 1rem; align-items: center; position: sticky; bottom: 0; padding: 0.75rem 0; background: var(--bg); }
 button.primary:disabled { opacity: 0.6; cursor: default; }
+
+/* Letter */
+.letter-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; margin: 0 0 1.25rem; scroll-margin-top: 1rem; }
+.letter-head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.letter-head h2 { margin: 0; font-size: 1.15rem; }
+.letter-controls { margin-top: 0.75rem; }
+.letter-text { width: 100%; margin-top: 0.75rem; line-height: 1.55; font-family: inherit; }
+.notice { background: var(--badge); border-radius: 6px; padding: 0.5rem 0.75rem; margin: 0.75rem 0 0; }
+button.button { font: inherit; cursor: pointer; color: var(--text); }
+.footer-links { display: flex; gap: 1rem; flex-wrap: wrap; }
