@@ -16,3 +16,9 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+      - name: Personal data stays out of git
+        run: |
+          git check-ignore -q data/profile.json
+          git check-ignore -q data/letters/x.json
+          git check-ignore -q .env
+          test -z "$(git ls-files data .env)"

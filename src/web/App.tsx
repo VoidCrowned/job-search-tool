@@ -1,5 +1,6 @@
 import { I18nProvider, LanguageSelect, useT } from './i18n/index.tsx';
 import { JobPage } from './JobPage.tsx';
+import { ProfilePage } from './ProfilePage.tsx';
 import { SearchPage } from './SearchPage.tsx';
 import { ThemeSelect } from './theme.tsx';
 import { onLinkClick, useLocation } from './router.ts';
@@ -7,6 +8,7 @@ import { onLinkClick, useLocation } from './router.ts';
 function Route({ pathname, search }: { pathname: string; search: string }) {
   const t = useT();
   if (pathname === '/') return <SearchPage search={search} />;
+  if (pathname === '/profile') return <ProfilePage />;
   const job = /^\/job\/([^/]+)$/.exec(pathname);
   if (job) {
     const refnr = decodeURIComponent(job[1]);
@@ -33,6 +35,9 @@ function Shell() {
           {t.app.brand}
         </a>
         <div className="header-controls">
+          <a href="/profile" onClick={onLinkClick} className="header-link" aria-current={location.pathname === '/profile' ? 'page' : undefined}>
+            {t.app.profile}
+          </a>
           <LanguageSelect />
           <ThemeSelect />
         </div>

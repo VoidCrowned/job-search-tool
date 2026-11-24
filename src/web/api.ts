@@ -24,9 +24,18 @@ export function errorText(err: RequestError, t: Messages): string {
 }
 
 export async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+  return requestJson<T>(url, { signal });
+}
+
+/** PUT/POST a JSON body and read the JSON answer. */
+export async function sendJson<T>(method: 'PUT' | 'POST', url: string, body: unknown): Promise<T> {
+  return requestJson<T>(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+}
+
+async function requestJson<T>(url: string, init: RequestInit): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(url, { signal });
+    res = await fetch(url, init);
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') throw err;
     throw new RequestError(0, 'The local server is not reachable.');

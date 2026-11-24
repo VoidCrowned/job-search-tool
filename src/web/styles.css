@@ -162,3 +162,25 @@ label.check { display: inline-flex; gap: 0.4rem; align-items: center; font-size:
   cursor: pointer;
 }
 .page-tools button:hover { border-color: var(--accent); }
+
+/* Profile */
+.header-link { text-decoration: none; padding: 0.3rem 0.5rem; }
+.header-link[aria-current='page'] { font-weight: 600; text-decoration: underline; }
+.profile-page h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
+.profile-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 0.75rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+.profile-section legend { font-weight: 600; color: var(--text); font-size: 1rem; padding: 0 0.25rem; width: auto; }
+.profile-field { display: flex; flex-direction: column; gap: 0.25rem; }
+.profile-field label { font-size: 0.85rem; color: var(--muted); }
+.profile-field.field-desiredRoles, .profile-field.field-skills, .profile-field.field-notes, .profile-field.field-cv { grid-column: 1 / -1; }
+textarea { font: inherit; padding: 0.5rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); resize: vertical; }
+.form-actions { display: flex; gap: 1rem; align-items: center; position: sticky; bottom: 0; padding: 0.75rem 0; background: var(--bg); }
+button.primary:disabled { opacity: 0.6; cursor: default; }
