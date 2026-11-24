@@ -2,12 +2,18 @@ import { Hono } from 'hono';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { createJobsucheClient, JobsucheError, logoUrl, type JobsucheClient } from '../api/client.ts';
 import { parseSearchParams } from '../api/params.ts';
+import { parseProfile } from '../shared/profile.ts';
+import { createStorage, type Storage } from './storage.ts';
 
 export interface AppOptions {
   client?: JobsucheClient;
   /** Used for logo requests. */
   fetch?: typeof fetch;
+  storage?: Storage;
 }
+
+/** Host names the API answers to. Anything else (e.g. a DNS-rebinding attack from a website) is refused. */
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]', '::1']);
 
 /**
  * Reference numbers look like "10001-1003891045-S", but external ones contain letters, "." and "_"
@@ -20,7 +26,14 @@ const LOGO_HASH = /^[A-Za-z0-9_\-+/=]{10,200}$/;
 export function createApp(options: AppOptions = {}) {
   const client = options.client ?? createJobsucheClient();
   const doFetch = options.fetch ?? globalThis.fetch;
+  const storage = options.storage ?? createStorage();
   const app = new Hono();
+
+  // Personal data is served here, so only answer requests addressed to this machine.
+  app.use('/api/*', async (c, next) => {
+    if (!LOCAL_HOSTS.has(new URL(c.req.url).hostname)) return c.json({ error: 'Forbidden host.' }, 403);
+    await next();
+  });
 
   app.onError((err, c) => {
     if (err instanceof JobsucheError) {
@@ -33,6 +46,16 @@ export function createApp(options: AppOptions = {}) {
   });
 
   app.get('/api/health', (c) => c.json({ ok: true }));
+
+  app.get('/api/profile', async (c) => c.json(await storage.readProfile()));
+
+  app.put('/api/profile', async (c) => {
+    const body: unknown = await c.req.json().catch(() => undefined);
+    const { profile, errors } = parseProfile(body);
+    if (errors.length) return c.json({ error: 'Invalid profile.', details: errors }, 400);
+    await storage.writeProfile(profile);
+    return c.json(profile);
+  });
 
   app.get('/api/jobs', async (c) => {
     const { params, errors } = parseSearchParams(c.req.query());
