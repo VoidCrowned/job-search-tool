@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent, type MouseEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type MouseEvent } from 'react';
 import {
   ANGEBOTSART,
   ARBEITSZEIT,
@@ -19,7 +19,8 @@ import { JobDetailsView } from './JobDetailsView.tsx';
 import { useJobDetails } from './jobDetails.ts';
 import { PageTools } from './PageTools.tsx';
 import { rememberSearch } from './lastSearch.ts';
-import { navigate, onLinkClick } from './router.ts';
+import { clearResultsView, readResultsView, saveResultsView } from './resultsView.ts';
+import { navigate, onBeforeNavigate, onLinkClick } from './router.ts';
 
 function hasSearch(p: SearchParams) {
   return Boolean(p.was || p.wo || p.berufsfeld || p.arbeitgeber);
@@ -48,7 +49,7 @@ export function SearchPage({ search }: { search: string }) {
         {result.state === 'loading' && <p className="hint">{t.search.loading}</p>}
         {result.state === 'error' && <p className="error">{errorText(result.error, t)}</p>}
         {/* Keyed on the query so expanded cards reset for a new search or page. */}
-        {result.state === 'done' && <Results key={query} data={result.data} params={params} />}
+        {result.state === 'done' && <Results key={query} query={query} data={result.data} params={params} />}
       </section>
     </>
   );
@@ -179,11 +180,35 @@ function SearchForm({ initial }: { initial: SearchParams }) {
   );
 }
 
-function Results({ data, params }: { data: SearchResponse; params: SearchParams }) {
+function Results({ query, data, params }: { query: string; data: SearchResponse; params: SearchParams }) {
   const t = useT();
   const items = data.ergebnisliste ?? [];
+  // Coming back to this exact search: restore the cards that were open and the scroll position.
+  const [restored] = useState(() => readResultsView(query));
   // Several cards can be open at once, so this is a set rather than a single id.
-  const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set(restored?.expanded));
+  const expandedRef = useRef(expanded);
+
+  useEffect(() => {
+    expandedRef.current = expanded;
+  }, [expanded]);
+
+  useLayoutEffect(() => {
+    if (!restored) return;
+    window.scrollTo(0, restored.scrollY);
+    clearResultsView();
+  }, [restored]);
+
+  useEffect(() => {
+    // Save the view when leaving: in-app links (before the page changes) and the browser's Back/Forward.
+    const save = () => saveResultsView({ query, scrollY: window.scrollY, expanded: [...expandedRef.current] });
+    const unsubscribe = onBeforeNavigate(save);
+    window.addEventListener('popstate', save);
+    return () => {
+      unsubscribe();
+      window.removeEventListener('popstate', save);
+    };
+  }, [query]);
   const toggle = (refnr: string) =>
     setExpanded((prev) => {
       const next = new Set(prev);

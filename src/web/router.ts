@@ -14,8 +14,20 @@ export function useLocation(): URL {
   return new URL(href, window.location.origin);
 }
 
+// The app restores the results list itself (see resultsView.ts), so the browser shouldn't also try.
+if (typeof history !== 'undefined' && 'scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+const beforeNavigate = new Set<() => void>();
+
+/** Runs `fn` just before an in-app navigation, while the old page is still on screen. Returns an unsubscribe function. */
+export function onBeforeNavigate(fn: () => void): () => void {
+  beforeNavigate.add(fn);
+  return () => beforeNavigate.delete(fn);
+}
+
 export function navigate(to: string) {
   if (to === snapshot()) return;
+  for (const fn of beforeNavigate) fn();
   window.history.pushState(null, '', to);
   window.dispatchEvent(new PopStateEvent('popstate'));
   // A new page starts at the top, like a normal page load. (Browser back/forward keep their own behaviour.)
