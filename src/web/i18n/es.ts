@@ -66,6 +66,11 @@ export const es: Messages = {
     copyFailed: 'No se ha podido copiar. Selecciona el texto y pulsa Ctrl+C.',
     replaceConfirm: '¿Sustituir tus cambios sin guardar por una carta nueva?',
     placeholdersLeft: (n) => `Quedan ${n} marcadores por completar: busca los [corchetes].`,
+    history: (n) => `Versiones anteriores (${n})`,
+    historyHint: 'Abre una versión para seguir trabajando con ella. Guardar crea una versión nueva; no se sobrescribe nada.',
+    sources: { template: 'Plantilla', claude: 'Claude', edit: 'Editada' },
+    currentVersion: 'mostrada',
+    switchConfirm: '¿Descartar los cambios sin guardar y abrir esta versión?',
   },
 
   theme: {

@@ -127,4 +127,50 @@ describe('letter panel', () => {
     const link = await within(screen.getByText(first.stellenangebotsTitel).closest('li')!).findByText('Write application');
     expect(link.getAttribute('href')).toBe(`/job/${first.referenznummer}#letter`);
   });
+
+  it('lists earlier versions, newest first, and opens one to continue from it', async () => {
+    add({ source: 'template', language: 'de', text: 'First draft' });
+    add({ source: 'edit', language: 'de', text: 'Second draft' });
+    letterServer();
+    render(<App />);
+    const box = (await screen.findByLabelText('Letter text')) as HTMLTextAreaElement;
+    expect(box.value).toBe('Second draft');
+    fireEvent.click(panel().getByText('Earlier versions (2)'));
+    const items = panel().getAllByRole('listitem');
+    expect(items[0].textContent).toContain('Edited');
+    expect(items[0].textContent).toContain('(shown)');
+    expect(items[1].textContent).toContain('Template');
+
+    fireEvent.click(within(items[1]).getByRole('button'));
+    expect(box.value).toBe('First draft');
+    // Continuing from the old version and saving adds a third version; nothing is overwritten.
+    fireEvent.change(box, { target: { value: 'First draft, improved' } });
+    fireEvent.click(panel().getByText('Save changes'));
+    expect(await panel().findByText('Saved.')).toBeTruthy();
+    expect(file.versions.map((v) => v.text)).toEqual(['First draft', 'Second draft', 'First draft, improved']);
+    expect(panel().getByText('Earlier versions (3)')).toBeTruthy();
+  });
+
+  it('asks before switching versions with unsaved changes', async () => {
+    add({ source: 'template', language: 'de', text: 'A' });
+    add({ source: 'edit', language: 'de', text: 'B' });
+    letterServer();
+    const confirm = vi.fn(() => false);
+    vi.stubGlobal('confirm', confirm);
+    render(<App />);
+    const box = (await screen.findByLabelText('Letter text')) as HTMLTextAreaElement;
+    fireEvent.change(box, { target: { value: 'B changed' } });
+    fireEvent.click(panel().getByText('Earlier versions (2)'));
+    fireEvent.click(within(panel().getAllByRole('listitem')[1]).getByRole('button'));
+    expect(confirm).toHaveBeenCalled();
+    expect(box.value).toBe('B changed');
+  });
+
+  it('hides the history while there is only one version', async () => {
+    add({ source: 'template', language: 'de', text: 'Only' });
+    letterServer();
+    render(<App />);
+    await screen.findByLabelText('Letter text');
+    expect(panel().queryByText(/Earlier versions/)).toBeNull();
+  });
 });

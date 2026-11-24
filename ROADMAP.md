@@ -19,7 +19,7 @@
 - [x] Local profile (#6)
 - [ ] Application text via Claude API (#7)
 - [x] Application text template fallback (#8)
-- [ ] Letter history per job (#37)
+- [x] Letter history per job (#37)
 - [ ] ATS-ready letters (#38)
 - [ ] Showcase mock data (#9)
 

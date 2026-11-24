@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { PLACEHOLDER, type LanguageChoice, type LetterFile, type LetterVersion } from '../shared/letter.ts';
 import { isProfileEmpty, type Profile } from '../shared/profile.ts';
 import { errorText, getJson, RequestError, sendJson } from './api.ts';
+import { formatDateTime } from './format.ts';
 import { useT } from './i18n/index.tsx';
 import { onLinkClick } from './router.ts';
 
@@ -89,6 +90,13 @@ function LetterEditor({ refnr, initial, profile }: { refnr: string; initial: Let
     setCurrent(result.version);
     setText(result.version.text);
     setStatus(next);
+  }
+
+  function openVersion(version: LetterVersion) {
+    if (dirty && !window.confirm(t.letter.switchConfirm)) return;
+    setCurrent(version);
+    setText(version.text);
+    setStatus({ kind: 'idle' });
   }
 
   async function generate() {
@@ -193,6 +201,28 @@ function LetterEditor({ refnr, initial, profile }: { refnr: string; initial: Let
               {message}
             </span>
           </div>
+          {file.versions.length > 1 && (
+            <details className="letter-history">
+              <summary>{t.letter.history(file.versions.length)}</summary>
+              <p className="hint">{t.letter.historyHint}</p>
+              <ol>
+                {[...file.versions].reverse().map((v) => (
+                  <li key={v.id}>
+                    <button
+                      type="button"
+                      className="link-button"
+                      onClick={() => openVersion(v)}
+                      aria-current={v.id === current.id ? 'true' : undefined}
+                    >
+                      {formatDateTime(v.createdAt, t)} · {t.letter.sources[v.source] ?? v.source} · {v.language.toUpperCase()}
+                    </button>
+                    {v.id === current.id && <span className="hint"> ({t.letter.currentVersion})</span>}
+                    <span className="version-preview">{v.text.slice(0, 120).replace(/\s+/g, ' ')}…</span>
+                  </li>
+                ))}
+              </ol>
+            </details>
+          )}
         </>
       )}
     </div>
