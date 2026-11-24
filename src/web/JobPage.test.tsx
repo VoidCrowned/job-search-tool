@@ -6,10 +6,11 @@ import { renderMarkdown } from './markdown.ts';
 import { clearJobDetailsCache } from './jobDetails.ts';
 import detailsFixture from '../api/fixtures/details.json';
 
+import { fakeApi, json } from './testing/fakeApi.ts';
+
+/** Job details come from `body`; everything else from the fake API. */
 function mockFetch(body: unknown, status = 200) {
-  const fn = vi.fn(async () => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } }));
-  vi.stubGlobal('fetch', fn);
-  return fn;
+  return fakeApi({ '/api/jobs/': () => json(body, status) });
 }
 
 afterEach(() => {

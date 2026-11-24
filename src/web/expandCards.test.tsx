@@ -3,21 +3,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { App } from './App.tsx';
 import { clearJobDetailsCache } from './jobDetails.ts';
+import { fakeApi } from './testing/fakeApi.ts';
 import searchFixture from '../api/fixtures/search.json';
-import detailsFixture from '../api/fixtures/details.json';
 
 const [first, second] = searchFixture.ergebnisliste;
 
 /** Search requests get the search fixture; details requests get the details fixture with the asked-for refnr. */
 function routeFetch() {
-  const fn = vi.fn(async (url: string) => {
-    const body = url.startsWith('/api/jobs?')
-      ? searchFixture
-      : { ...detailsFixture, referenznummer: decodeURIComponent(url.split('/').pop()!) };
-    return new Response(JSON.stringify(body), { headers: { 'Content-Type': 'application/json' } });
-  });
-  vi.stubGlobal('fetch', fn);
-  return fn;
+  return fakeApi();
 }
 
 const detailCalls = (fn: ReturnType<typeof routeFetch>) =>

@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { App } from './App.tsx';
 import { clearJobDetailsCache } from './jobDetails.ts';
+import { fakeApi } from './testing/fakeApi.ts';
 import searchFixture from '../api/fixtures/search.json';
-import detailsFixture from '../api/fixtures/details.json';
 
 const [first, second] = searchFixture.ergebnisliste;
 let scrollBy: ReturnType<typeof vi.fn>;
@@ -19,13 +19,7 @@ beforeEach(() => {
   window.history.replaceState(null, '', '/?was=Pflege&wo=Hamburg');
   scrollBy = vi.fn();
   vi.stubGlobal('scrollBy', scrollBy);
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (url: string) => {
-      const body = url.startsWith('/api/jobs?') ? searchFixture : detailsFixture;
-      return new Response(JSON.stringify(body), { headers: { 'Content-Type': 'application/json' } });
-    }),
-  );
+  fakeApi();
 });
 afterEach(() => {
   cleanup();

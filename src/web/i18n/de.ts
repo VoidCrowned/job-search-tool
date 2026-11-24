@@ -45,6 +45,29 @@ export const de: Messages = {
     loading: 'Profil wird geladen…',
   },
 
+  letter: {
+    title: 'Anschreiben',
+    open: 'Bewerbung schreiben',
+    language: 'Sprache des Anschreibens',
+    languageAuto: 'Automatisch (nach Anzeige)',
+    languageDe: 'Deutsch',
+    languageEn: 'Englisch',
+    fillTemplate: 'Vorlage ausfüllen',
+    working: 'Wird geschrieben…',
+    templateHint: 'Ohne API-Schlüssel bekommst du eine Vorlage, die aus deinem Profil ausgefüllt wird. Teile in [Klammern] füllst du selbst aus.',
+    profileEmpty: 'Dein Profil ist leer, deshalb besteht das Anschreiben größtenteils aus Platzhaltern.',
+    editProfile: 'Profil ausfüllen',
+    textLabel: 'Text des Anschreibens',
+    save: 'Änderungen speichern',
+    saved: 'Gespeichert.',
+    unsaved: 'Ungespeicherte Änderungen',
+    copy: 'Kopieren',
+    copied: 'Kopiert.',
+    copyFailed: 'Kopieren fehlgeschlagen. Markiere den Text und drücke Strg+C.',
+    replaceConfirm: 'Ungespeicherte Änderungen durch ein neues Anschreiben ersetzen?',
+    placeholdersLeft: (n) => `Noch ${n} Platzhalter auszufüllen: achte auf [Klammern].`,
+  },
+
   theme: {
     label: 'Design',
     system: 'System',
@@ -83,6 +106,7 @@ export const de: Messages = {
   },
 
   card: {
+    writeApplication: 'Bewerbung schreiben',
     publishedOn: (date) => `Veröffentlicht am ${date}`,
     homeOffice: 'Homeoffice',
     externalAd: 'Externe Anzeige',

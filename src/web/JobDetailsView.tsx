@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { jobPageUrl } from '../api/client.ts';
 import type { JobDetails } from '../api/types.ts';
 import { formatContract, formatDate, formatOfferType, formatPay, workingTimes } from './format.ts';
@@ -22,7 +22,16 @@ function Logo({ hash, alt, small = false }: { hash: string; alt: string; small?:
  * The body of a job ad. `compact` is used inside a result card: the card already shows the title
  * and company, so only the logo, links, facts and description are rendered.
  */
-export function JobDetailsView({ job, compact = false }: { job: JobDetails; compact?: boolean }) {
+export function JobDetailsView({
+  job,
+  compact = false,
+  beforeDescription,
+}: {
+  job: JobDetails;
+  compact?: boolean;
+  /** Rendered between the facts and the (often long) description, e.g. the letter section. */
+  beforeDescription?: ReactNode;
+}) {
   const t = useT();
   const description = useMemo(
     () => (job.stellenangebotsBeschreibung ? renderMarkdown(job.stellenangebotsBeschreibung) : undefined),
@@ -103,6 +112,8 @@ export function JobDetailsView({ job, compact = false }: { job: JobDetails; comp
             </div>
           ))}
       </dl>
+
+      {beforeDescription}
 
       {description ? (
         <section className="description" lang="de" dangerouslySetInnerHTML={{ __html: description }} />

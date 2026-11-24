@@ -47,6 +47,29 @@ export const en = {
     loading: 'Loading profile…',
   },
 
+  letter: {
+    title: 'Application letter',
+    open: 'Write application',
+    language: 'Letter language',
+    languageAuto: 'Automatic (from the ad)',
+    languageDe: 'German',
+    languageEn: 'English',
+    fillTemplate: 'Fill template',
+    working: 'Writing…',
+    templateHint: 'Without an API key, you get a template filled from your profile. Parts in [brackets] are for you to fill in.',
+    profileEmpty: 'Your profile is empty, so the letter will be mostly placeholders.',
+    editProfile: 'Fill in your profile',
+    textLabel: 'Letter text',
+    save: 'Save changes',
+    saved: 'Saved.',
+    unsaved: 'Unsaved changes',
+    copy: 'Copy',
+    copied: 'Copied.',
+    copyFailed: 'Copying failed. Select the text and press Ctrl+C.',
+    replaceConfirm: 'Replace your unsaved changes with a new letter?',
+    placeholdersLeft: (n: number) => `${n} placeholder${n === 1 ? '' : 's'} left to fill in: look for [brackets].`,
+  },
+
   theme: {
     label: 'Theme',
     system: 'System',
@@ -86,6 +109,7 @@ export const en = {
   },
 
   card: {
+    writeApplication: 'Write application',
     publishedOn: (date: string) => `Published ${date}`,
     homeOffice: 'Home office',
     externalAd: 'External ad',

@@ -16,6 +16,7 @@ import { errorText, useJson } from './api.ts';
 import { formatDate, formatNumber, formatPay, formatPlace } from './format.ts';
 import { useT } from './i18n/index.tsx';
 import { JobDetailsView } from './JobDetailsView.tsx';
+import { LETTER_ANCHOR } from './LetterPanel.tsx';
 import { useJobDetails } from './jobDetails.ts';
 import { PageTools } from './PageTools.tsx';
 import { rememberSearch } from './lastSearch.ts';
@@ -323,9 +324,14 @@ function JobCard({ job, expanded, onToggle }: { job: JobSearchItem; expanded: bo
         <div className="job-body" id={bodyId}>
           <CardDetails refnr={job.referenznummer} />
           <div className="job-body-footer">
-            <a href={href} onClick={onLinkClick}>
-              {t.card.openAsPage}
-            </a>
+            <span className="footer-links">
+              <a href={href} onClick={onLinkClick}>
+                {t.card.openAsPage}
+              </a>
+              <a href={`${href}#${LETTER_ANCHOR}`} onClick={onLinkClick}>
+                {t.card.writeApplication}
+              </a>
+            </span>
             <button type="button" className="link-button" onClick={onToggle}>
               {t.card.collapse}
             </button>

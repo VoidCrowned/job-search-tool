@@ -2,7 +2,12 @@ import { Hono } from 'hono';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { createJobsucheClient, JobsucheError, logoUrl, type JobsucheClient } from '../api/client.ts';
 import { parseSearchParams } from '../api/params.ts';
+import { randomUUID } from 'node:crypto';
+import type { JobDetails } from '../api/types.ts';
+import { isLanguageChoice, MAX_LETTER_LENGTH, type LetterFile, type LetterLanguage, type LetterVersion } from '../shared/letter.ts';
 import { parseProfile } from '../shared/profile.ts';
+import { detectLanguage } from './letter/language.ts';
+import { fillTemplate } from './letter/template.ts';
 import { createStorage, type Storage } from './storage.ts';
 
 export interface AppOptions {
@@ -46,6 +51,58 @@ export function createApp(options: AppOptions = {}) {
   });
 
   app.get('/api/health', (c) => c.json({ ok: true }));
+
+  app.get('/api/config', (c) => c.json({ ai: false }));
+
+  const lettersFor = async (refnr: string, job?: JobDetails): Promise<LetterFile> => {
+    const file = (await storage.readLetters(refnr)) ?? { refnr, jobTitle: '', versions: [] };
+    if (job) {
+      file.jobTitle = job.stellenangebotsTitel;
+      file.company = job.firma;
+    }
+    return file;
+  };
+
+  const addVersion = async (file: LetterFile, version: Omit<LetterVersion, 'id' | 'createdAt'>) => {
+    const full: LetterVersion = { id: randomUUID(), createdAt: new Date().toISOString(), ...version };
+    file.versions.push(full);
+    await storage.writeLetters(file);
+    return full;
+  };
+
+  app.get('/api/letters/:refnr', async (c) => {
+    const refnr = c.req.param('refnr');
+    if (!REFNR.test(refnr)) return c.json({ error: 'Invalid reference number.' }, 400);
+    return c.json(await lettersFor(refnr));
+  });
+
+  app.post('/api/letters/:refnr/generate', async (c) => {
+    const refnr = c.req.param('refnr');
+    if (!REFNR.test(refnr)) return c.json({ error: 'Invalid reference number.' }, 400);
+    const body = (await c.req.json().catch(() => ({}))) as { language?: unknown };
+    const choice = body.language ?? 'auto';
+    if (!isLanguageChoice(choice)) return c.json({ error: 'Invalid language.' }, 400);
+
+    const [job, profile] = await Promise.all([client.getJobDetails(refnr), storage.readProfile()]);
+    const language: LetterLanguage =
+      choice === 'auto' ? detectLanguage(job.stellenangebotsTitel, job.stellenangebotsBeschreibung) : choice;
+    const file = await lettersFor(refnr, job);
+    const version = await addVersion(file, { source: 'template', language, text: fillTemplate(profile, job, language) });
+    return c.json({ file, version });
+  });
+
+  app.post('/api/letters/:refnr/versions', async (c) => {
+    const refnr = c.req.param('refnr');
+    if (!REFNR.test(refnr)) return c.json({ error: 'Invalid reference number.' }, 400);
+    const body = (await c.req.json().catch(() => ({}))) as { text?: unknown; language?: unknown };
+    if (typeof body.text !== 'string' || !body.text.trim() || body.text.length > MAX_LETTER_LENGTH) {
+      return c.json({ error: 'Invalid letter text.' }, 400);
+    }
+    if (body.language !== 'de' && body.language !== 'en') return c.json({ error: 'Invalid language.' }, 400);
+    const file = await lettersFor(refnr);
+    const version = await addVersion(file, { source: 'edit', language: body.language, text: body.text });
+    return c.json({ file, version });
+  });
 
   app.get('/api/profile', async (c) => c.json(await storage.readProfile()));
 
