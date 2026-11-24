@@ -5,7 +5,7 @@
 - [x] API client and documentation (#2)
 
 ## M2: Search website
-- [ ] Local API proxy (#3)
+- [x] Local API proxy (#3)
 - [ ] Search page (#4)
 - [ ] Job details view (#5)
 
