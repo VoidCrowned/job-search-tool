@@ -21,6 +21,7 @@ export interface AppOptions {
   generator?: LetterGenerator | null;
   /** Shown in /api/config. */
   model?: string;
+  provider?: 'anthropic' | 'openrouter';
 }
 
 /** Host names the API answers to. Anything else (e.g. a DNS-rebinding attack from a website) is refused. */
@@ -42,6 +43,7 @@ export function createApp(options: AppOptions = {}) {
   const generator =
     options.generator !== undefined ? options.generator : aiConfig.apiKey ? createClaudeGenerator(aiConfig) : null;
   const model = options.model ?? aiConfig.model;
+  const provider = options.provider ?? aiConfig.provider ?? 'anthropic';
   const app = new Hono();
 
   // Personal data is served here, so only answer requests addressed to this machine.
@@ -53,7 +55,7 @@ export function createApp(options: AppOptions = {}) {
   app.onError((err, c) => {
     if (err instanceof RefusalError) return c.json({ error: err.message, code: 'AI_REFUSED' }, 422);
     if (err instanceof Anthropic.AuthenticationError || err instanceof Anthropic.PermissionDeniedError) {
-      return c.json({ error: 'The Anthropic API key was rejected.', code: 'AI_AUTH' }, 502);
+      return c.json({ error: 'The API key was rejected.', code: 'AI_AUTH' }, 502);
     }
     if (err instanceof Anthropic.RateLimitError) {
       return c.json({ error: 'Anthropic rate limit reached.', code: 'AI_RATE_LIMIT' }, 503);
@@ -73,7 +75,7 @@ export function createApp(options: AppOptions = {}) {
 
   app.get('/api/health', (c) => c.json({ ok: true }));
 
-  app.get('/api/config', (c) => c.json(generator ? { ai: true, model } : { ai: false }));
+  app.get('/api/config', (c) => c.json(generator ? { ai: true, model, provider } : { ai: false }));
 
   const lettersFor = async (refnr: string, job?: JobDetails): Promise<LetterFile> => {
     const file = (await storage.readLetters(refnr)) ?? { refnr, jobTitle: '', versions: [] };

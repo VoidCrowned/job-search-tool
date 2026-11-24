@@ -21,6 +21,7 @@
 - [x] Application text template fallback (#8)
 - [x] Letter history per job (#37)
 - [x] ATS-ready letters (#38)
+- [x] OpenRouter as a key provider (#45)
 - [x] Showcase mock data (#9)
 
 ## Later

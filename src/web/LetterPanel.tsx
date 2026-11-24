@@ -13,6 +13,7 @@ export const LETTER_ANCHOR = 'letter';
 interface AiConfig {
   ai: boolean;
   model?: string;
+  provider?: 'anthropic' | 'openrouter';
 }
 
 interface Loaded {
@@ -191,7 +192,11 @@ function LetterEditor({ refnr, initial, profile, config }: { refnr: string; init
         </button>
       </div>
       {config.ai ? (
-        <p className="hint">{t.letter.aiHint(config.model ?? 'Claude')}</p>
+        <p className="hint">
+          {t.letter.aiHint(
+            config.provider === 'openrouter' ? t.letter.viaOpenRouter(config.model ?? 'Claude') : (config.model ?? 'Claude'),
+          )}
+        </p>
       ) : (
         <p className="hint">
           {t.letter.templateHint} {t.letter.keyHint}

@@ -93,7 +93,7 @@ describe('letters API with Claude', () => {
     withAi(generator).request(`/api/letters/${ref}/generate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 
   it('reports the model in /api/config', async () => {
-    expect(await (await withAi(vi.fn()).request('/api/config')).json()).toEqual({ ai: true, model: 'claude-opus-5-5' });
+    expect(await (await withAi(vi.fn()).request('/api/config')).json()).toEqual({ ai: true, model: 'claude-opus-5-5', provider: 'anthropic' });
   });
 
   it('uses Claude by default when available and stores the keywords', async () => {

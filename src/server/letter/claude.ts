@@ -31,13 +31,37 @@ export class RefusalError extends Error {
   }
 }
 
+export type AiProvider = 'anthropic' | 'openrouter';
+
 export interface AiConfig {
+  provider?: AiProvider;
   apiKey?: string;
   model: string;
 }
 
+export const OPENROUTER_BASE_URL = 'https://openrouter.ai/api';
+export const DEFAULT_OPENROUTER_MODEL = 'anthropic/claude-opus-5.5';
+
+/** OpenRouter keys start with "sk-or-"; Anthropic keys with "sk-ant-". */
+export function isOpenRouterKey(key: string): boolean {
+  return key.startsWith('sk-or-');
+}
+
+/**
+ * Picks the provider from .env: ANTHROPIC_API_KEY (Anthropic directly) or OPENROUTER_API_KEY.
+ * An OpenRouter key pasted into ANTHROPIC_API_KEY is recognised by its prefix.
+ */
 export function aiConfigFromEnv(env: NodeJS.ProcessEnv = process.env): AiConfig {
-  return { apiKey: env.ANTHROPIC_API_KEY?.trim() || undefined, model: env.ANTHROPIC_MODEL?.trim() || DEFAULT_MODEL };
+  const anthropicKey = env.ANTHROPIC_API_KEY?.trim() || undefined;
+  const openrouterKey = env.OPENROUTER_API_KEY?.trim() || undefined;
+  const orModel = env.OPENROUTER_MODEL?.trim() || DEFAULT_OPENROUTER_MODEL;
+
+  if (anthropicKey && !isOpenRouterKey(anthropicKey)) {
+    return { provider: 'anthropic', apiKey: anthropicKey, model: env.ANTHROPIC_MODEL?.trim() || DEFAULT_MODEL };
+  }
+  const key = openrouterKey ?? anthropicKey;
+  if (key) return { provider: 'openrouter', apiKey: key, model: orModel };
+  return { provider: 'anthropic', apiKey: undefined, model: env.ANTHROPIC_MODEL?.trim() || DEFAULT_MODEL };
 }
 
 const OUTPUT_SCHEMA = {
@@ -110,36 +134,66 @@ Write the cover letter for this job.
   return { system: SYSTEM_PROMPT, user };
 }
 
-function parseOutput(text: string): { letter: string; adKeywords: string[] } {
-  const data = JSON.parse(text) as { letter?: unknown; adKeywords?: unknown };
+/**
+ * Reads the model's answer. Normally it is JSON (structured output). If a provider ignored the format
+ * and the model answered with the plain letter, that text is used as the letter (without keywords).
+ */
+export function parseOutput(text: string): { letter: string; adKeywords: string[] } {
+  const trimmed = text.trim();
+  if (!trimmed.startsWith('{')) {
+    if (trimmed.length < 100) throw new Error('Claude returned no letter.');
+    return { letter: trimmed, adKeywords: [] };
+  }
+  let data: { letter?: unknown; adKeywords?: unknown };
+  try {
+    data = JSON.parse(trimmed) as typeof data;
+  } catch {
+    throw new Error('Claude returned an incomplete answer.');
+  }
   if (typeof data.letter !== 'string' || !data.letter.trim()) throw new Error('Claude returned no letter.');
   const adKeywords = Array.isArray(data.adKeywords) ? data.adKeywords.filter((k): k is string => typeof k === 'string') : [];
   return { letter: data.letter.trim(), adKeywords };
 }
 
+export function createClient(config: AiConfig): Anthropic {
+  if (config.provider === 'openrouter') {
+    // OpenRouter's Anthropic-compatible endpoint wants the key as "Authorization: Bearer", not "x-api-key".
+    return new Anthropic({ baseURL: OPENROUTER_BASE_URL, authToken: config.apiKey, apiKey: null });
+  }
+  return new Anthropic({ apiKey: config.apiKey });
+}
+
 export function createClaudeGenerator(config: AiConfig, client?: Anthropic): LetterGenerator {
-  const anthropic = client ?? new Anthropic({ apiKey: config.apiKey });
+  const anthropic = client ?? createClient(config);
 
   return async (input) => {
     const { system, user } = buildPrompt(input);
-    const response = await anthropic.beta.messages.create({
+    const base = {
       model: config.model,
       max_tokens: 16000,
       system,
-      messages: [{ role: 'user', content: user }],
-      thinking: { type: 'adaptive' },
-      output_config: { effort: 'medium', format: { type: 'json_schema', schema: OUTPUT_SCHEMA } },
-      // If a safety classifier declines, the API retries on Anthropic's recommended fallback model.
-      betas: ['server-side-fallback-2026-07-01'],
-      fallbacks: 'default',
-    });
+      messages: [{ role: 'user' as const, content: user }],
+      thinking: { type: 'adaptive' as const },
+      output_config: { effort: 'medium' as const, format: { type: 'json_schema' as const, schema: OUTPUT_SCHEMA } },
+    };
+    const response =
+      config.provider === 'openrouter'
+        ? // OpenRouter attaches Anthropic beta headers itself; its own `fallbacks` means something else, so leave it out.
+          await anthropic.messages.create(base)
+        : await anthropic.beta.messages.create({
+            ...base,
+            // If a safety classifier declines, the API retries on Anthropic's recommended fallback model.
+            betas: ['server-side-fallback-2026-07-01'],
+            fallbacks: 'default',
+          });
 
     if (response.stop_reason === 'refusal') throw new RefusalError();
     if (response.stop_reason === 'max_tokens') throw new Error('The letter was cut off (max_tokens).');
     // Take the LAST text block: if a model declined mid-answer and the fallback took over, content holds
     // the first model's partial text, then a `fallback` block, then the fallback model's complete answer.
-    const text = response.content.findLast((b) => b.type === 'text');
-    if (!text || text.type !== 'text') throw new Error('Claude returned no text.');
+    const blocks = response.content as { type: string; text?: string }[];
+    const text = blocks.findLast((b) => b.type === 'text');
+    if (!text?.text) throw new Error('Claude returned no text.');
 
     return {
       ...parseOutput(text.text),

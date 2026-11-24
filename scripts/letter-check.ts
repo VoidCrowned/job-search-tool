@@ -16,7 +16,7 @@ function done(result: object, ok: boolean): never {
 
 if (!process.argv.includes('--ai')) done({ error: 'This check calls Claude and costs about 8 cents. Run it with: npm run letter:check -- --ai' }, false);
 const config = aiConfigFromEnv();
-if (!config.apiKey) done({ error: 'No ANTHROPIC_API_KEY found (environment or .env).' }, false);
+if (!config.apiKey) done({ error: 'No ANTHROPIC_API_KEY or OPENROUTER_API_KEY found (environment or .env).' }, false);
 
 // The fictional example profile: no real personal data is sent.
 const profile = parseProfile(exampleProfile).profile;
@@ -36,10 +36,11 @@ try {
   const usage = result.usage ?? { inputTokens: 0, outputTokens: 0 };
   done(
     {
+      provider: config.provider,
       model: result.model,
       seconds: Math.round((Date.now() - started) / 100) / 10,
       usage,
-      // Opus 5.5 prices: $4 per million input tokens, $20 per million output tokens.
+      // Anthropic's Opus 5.5 prices ($4 / $20 per million tokens); OpenRouter's own prices may differ slightly.
       estimatedCostUsd: Math.round(((usage.inputTokens * 4 + usage.outputTokens * 20) / 1e6) * 1000) / 1000,
       checks,
       adKeywords: result.adKeywords,
@@ -48,5 +49,5 @@ try {
     Object.values(checks).every(Boolean),
   );
 } catch (err) {
-  done({ error: err instanceof Error ? `${err.name}: ${err.message}` : String(err) }, false);
+  done({ provider: config.provider, model: config.model, error: err instanceof Error ? `${err.name}: ${err.message}` : String(err) }, false);
 }
