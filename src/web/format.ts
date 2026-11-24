@@ -18,6 +18,15 @@ function euro(locale: string) {
   return f;
 }
 
+const dateTimeFormats = new Map<string, Intl.DateTimeFormat>();
+
+export function formatDateTime(iso: string, m: Messages): string {
+  let f = dateTimeFormats.get(m.locale);
+  if (!f) dateTimeFormats.set(m.locale, (f = new Intl.DateTimeFormat(m.locale, { dateStyle: 'medium', timeStyle: 'short' })));
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? iso : f.format(d);
+}
+
 export function formatNumber(n: number, m: Messages): string {
   return n.toLocaleString(m.locale);
 }

@@ -68,6 +68,11 @@ export const en = {
     copyFailed: 'Copying failed. Select the text and press Ctrl+C.',
     replaceConfirm: 'Replace your unsaved changes with a new letter?',
     placeholdersLeft: (n: number) => `${n} placeholder${n === 1 ? '' : 's'} left to fill in: look for [brackets].`,
+    history: (n: number) => `Earlier versions (${n})`,
+    historyHint: 'Open a version to continue from it. Saving creates a new version; nothing is overwritten.',
+    sources: { template: 'Template', claude: 'Claude', edit: 'Edited' } as Record<string, string>,
+    currentVersion: 'shown',
+    switchConfirm: 'Discard your unsaved changes and open this version?',
   },
 
   theme: {

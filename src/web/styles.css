@@ -194,3 +194,10 @@ button.primary:disabled { opacity: 0.6; cursor: default; }
 .notice { background: var(--badge); border-radius: 6px; padding: 0.5rem 0.75rem; margin: 0.75rem 0 0; }
 button.button { font: inherit; cursor: pointer; color: var(--text); }
 .footer-links { display: flex; gap: 1rem; flex-wrap: wrap; }
+
+.letter-history { margin-top: 1rem; }
+.letter-history summary { cursor: pointer; color: var(--muted); }
+.letter-history ol { list-style: none; padding: 0; margin: 0.5rem 0 0; display: grid; gap: 0.5rem; }
+.letter-history li { border-left: 3px solid var(--border); padding-left: 0.6rem; }
+.letter-history button[aria-current='true'] { font-weight: 600; }
+.version-preview { display: block; color: var(--muted); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

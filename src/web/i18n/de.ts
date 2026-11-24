@@ -66,6 +66,11 @@ export const de: Messages = {
     copyFailed: 'Kopieren fehlgeschlagen. Markiere den Text und drücke Strg+C.',
     replaceConfirm: 'Ungespeicherte Änderungen durch ein neues Anschreiben ersetzen?',
     placeholdersLeft: (n) => `Noch ${n} Platzhalter auszufüllen: achte auf [Klammern].`,
+    history: (n) => `Frühere Versionen (${n})`,
+    historyHint: 'Öffne eine Version, um mit ihr weiterzuarbeiten. Speichern legt eine neue Version an; nichts wird überschrieben.',
+    sources: { template: 'Vorlage', claude: 'Claude', edit: 'Bearbeitet' },
+    currentVersion: 'angezeigt',
+    switchConfirm: 'Ungespeicherte Änderungen verwerfen und diese Version öffnen?',
   },
 
   theme: {
