@@ -104,6 +104,7 @@ Write the cover letter for this job.
 - ${LANGUAGE_RULES[language]}
 - Layout: sender block (name, address, email, phone), company, place and date ("${date}"), subject line naming the position and reference number ${job.referenznummer}, greeting, 3 to 4 short paragraphs, sign-off, name.
 - Match the candidate's real skills and experience to the ad's most important requirements.
+- Make it ATS-friendly (applicant tracking systems): plain text only, with no Markdown, tables, columns, tabs, emoji or decorative symbols such as bullets or arrows. Use the exact job title, the company name and the ad's own wording for its key requirements, wherever they truthfully apply. Keep it to one page: about 250 to 400 words in total.
 - Return the letter and the ad's key requirements as JSON.`;
 
   return { system: SYSTEM_PROMPT, user };

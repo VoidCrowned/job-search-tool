@@ -37,6 +37,7 @@ function add(v: Omit<LetterVersion, 'id' | 'createdAt'>) {
 }
 
 const panel = () => within(document.getElementById('letter')!);
+const history = () => within(document.querySelector<HTMLElement>('.letter-history')!);
 
 beforeEach(() => {
   file = { refnr: ref, jobTitle: '', versions: [] };
@@ -136,7 +137,7 @@ describe('letter panel', () => {
     const box = (await screen.findByLabelText('Letter text')) as HTMLTextAreaElement;
     expect(box.value).toBe('Second draft');
     fireEvent.click(panel().getByText('Earlier versions (2)'));
-    const items = panel().getAllByRole('listitem');
+    const items = history().getAllByRole('listitem');
     expect(items[0].textContent).toContain('Edited');
     expect(items[0].textContent).toContain('(shown)');
     expect(items[1].textContent).toContain('Template');
@@ -161,7 +162,7 @@ describe('letter panel', () => {
     const box = (await screen.findByLabelText('Letter text')) as HTMLTextAreaElement;
     fireEvent.change(box, { target: { value: 'B changed' } });
     fireEvent.click(panel().getByText('Earlier versions (2)'));
-    fireEvent.click(within(panel().getAllByRole('listitem')[1]).getByRole('button'));
+    fireEvent.click(within(history().getAllByRole('listitem')[1]).getByRole('button'));
     expect(confirm).toHaveBeenCalled();
     expect(box.value).toBe('B changed');
   });
@@ -210,5 +211,40 @@ describe('letter panel', () => {
     fireEvent.click(await panel().findByText('Write with Claude'));
     expect(await panel().findByText(/Claude declined to write this letter/)).toBeTruthy();
     expect(panel().getByText('Fill template')).toBeTruthy();
+  });
+
+  it('shows the ATS checklist and updates it while editing', async () => {
+    file = { refnr: ref, jobTitle: 'Pflegefachkraft (m/w/d)', company: 'Klinikum Nord', versions: [] };
+    add({ source: 'claude', language: 'de', text: 'Kurzer Text 🚀 [Dein Name]', adKeywords: ['Pflegeplanung', 'Teamarbeit'] });
+    letterServer();
+    render(<App />);
+    const box = (await screen.findByLabelText('Letter text')) as HTMLTextAreaElement;
+    const state = (id: string) => document.querySelector(`[data-check="${id}"]`)?.className;
+    expect(panel().getByText('ATS check')).toBeTruthy();
+    expect(state('symbols')).toBe('ats-fix');
+    expect(state('placeholders')).toBe('ats-fix');
+    expect(state('company')).toBe('ats-fix');
+    expect(panel().getByText(/Key terms from the ad: 0 of 2/)).toBeTruthy();
+    expect(panel().getByText(/Missing: Pflegeplanung, Teamarbeit/)).toBeTruthy();
+
+    const words = Array.from({ length: 220 }, (_, i) => `wort${i}`).join(' ');
+    fireEvent.change(box, { target: { value: `Bewerbung als Pflegefachkraft bei Klinikum Nord\n${words}\nPflegeplanung und Teamarbeit` } });
+    for (const id of ['length', 'plainText', 'symbols', 'placeholders', 'company', 'jobTitle', 'keywords']) expect(state(id)).toBe('ats-ok');
+  });
+
+  it('keeps using Claude keywords after an edit, and explains their absence for templates', async () => {
+    add({ source: 'template', language: 'de', text: 'Vorlage' });
+    letterServer();
+    render(<App />);
+    await screen.findByLabelText('Letter text');
+    expect(panel().getByText(/only checked for letters written by Claude/)).toBeTruthy();
+    cleanup();
+    file = { refnr: ref, jobTitle: 'x', versions: [] };
+    add({ source: 'claude', language: 'de', text: 'Claude', adKeywords: ['Pflege'] });
+    add({ source: 'edit', language: 'de', text: 'Edited Pflege' });
+    letterServer();
+    render(<App />);
+    await screen.findByLabelText('Letter text');
+    expect(panel().getByText(/Key terms from the ad: 1 of 1/)).toBeTruthy();
   });
 });

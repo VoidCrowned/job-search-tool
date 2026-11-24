@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { PLACEHOLDER, type LanguageChoice, type LetterFile, type LetterVersion } from '../shared/letter.ts';
 import { isProfileEmpty, type Profile } from '../shared/profile.ts';
 import { errorText, getJson, RequestError, sendJson } from './api.ts';
+import { AtsChecklist } from './AtsChecklist.tsx';
 import { formatDateTime } from './format.ts';
 import { useT } from './i18n/index.tsx';
 import { onLinkClick } from './router.ts';
@@ -27,6 +28,11 @@ type Status =
   | { kind: 'copied' }
   | { kind: 'copyFailed' }
   | { kind: 'error'; error: RequestError };
+
+/** Edits don't carry keywords themselves; reuse the newest ones Claude found for this job. */
+function latestKeywords(file: LetterFile): string[] | undefined {
+  return [...file.versions].reverse().find((v) => v.adKeywords?.length)?.adKeywords;
+}
 
 const toRequestError = (err: unknown) => (err instanceof RequestError ? err : new RequestError(0, String(err)));
 
@@ -224,6 +230,12 @@ function LetterEditor({ refnr, initial, profile, config }: { refnr: string; init
               {message}
             </span>
           </div>
+          <AtsChecklist
+            text={text}
+            jobTitle={file.jobTitle}
+            company={file.company}
+            keywords={current.adKeywords ?? latestKeywords(file)}
+          />
           {file.versions.length > 1 && (
             <details className="letter-history">
               <summary>{t.letter.history(file.versions.length)}</summary>

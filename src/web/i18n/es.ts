@@ -76,6 +76,22 @@ export const es: Messages = {
     switchConfirm: '¿Descartar los cambios sin guardar y abrir esta versión?',
   },
 
+  ats: {
+    title: 'Comprobación ATS',
+    intro: 'Los sistemas de seguimiento de candidatos leen las cartas automáticamente. Estas comprobaciones ayudan a que la tuya pase.',
+    length: (words) => `Extensión: ${words} palabras (objetivo: unas 180–500, una página)`,
+    plainText: 'Texto plano: sin Markdown, tablas ni tabuladores',
+    symbols: 'Sin emojis ni símbolos decorativos (viñetas, flechas, estrellas)',
+    placeholders: (n) => (n ? `Quedan ${n} marcadores por completar` : 'No quedan marcadores'),
+    company: 'Menciona la empresa',
+    jobTitle: 'Menciona el puesto',
+    keywords: (found, total) => `Términos clave del anuncio: ${found} de ${total}`,
+    missing: (list) => `Faltan: ${list}`,
+    noKeywords: 'Los términos clave del anuncio solo se comprueban en cartas redactadas por Claude.',
+    ok: 'OK',
+    fix: 'Revisar',
+  },
+
   theme: {
     label: 'Tema',
     system: 'Sistema',

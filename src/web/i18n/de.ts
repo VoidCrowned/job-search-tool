@@ -76,6 +76,22 @@ export const de: Messages = {
     switchConfirm: 'Ungespeicherte Änderungen verwerfen und diese Version öffnen?',
   },
 
+  ats: {
+    title: 'ATS-Check',
+    intro: 'Bewerbermanagementsysteme lesen Anschreiben automatisch. Diese Prüfungen helfen deinem Anschreiben durch.',
+    length: (words) => `Länge: ${words} Wörter (Ziel etwa 180–500, eine Seite)`,
+    plainText: 'Reiner Text: kein Markdown, keine Tabellen oder Tabulatoren',
+    symbols: 'Keine Emojis oder Ziersymbole (Aufzählungspunkte, Pfeile, Sterne)',
+    placeholders: (n) => (n ? `Noch ${n} Platzhalter auszufüllen` : 'Keine Platzhalter mehr'),
+    company: 'Nennt das Unternehmen',
+    jobTitle: 'Nennt den Stellentitel',
+    keywords: (found, total) => `Schlüsselbegriffe aus der Anzeige: ${found} von ${total}`,
+    missing: (list) => `Fehlt: ${list}`,
+    noKeywords: 'Schlüsselbegriffe aus der Anzeige werden nur bei Anschreiben von Claude geprüft.',
+    ok: 'OK',
+    fix: 'Prüfen',
+  },
+
   theme: {
     label: 'Design',
     system: 'System',
