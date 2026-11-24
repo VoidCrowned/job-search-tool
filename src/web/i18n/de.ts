@@ -58,6 +58,11 @@ export const de: Messages = {
     collapse: 'Zuklappen',
   },
 
+  tools: {
+    backToTop: '↑ Nach oben',
+    collapseAll: (n) => `Alle zuklappen (${n})`,
+  },
+
   options: {
     angebotsart: { '1': 'Arbeit', '2': 'Selbstständigkeit', '4': 'Ausbildung / Duales Studium', '34': 'Praktikum / Trainee' },
     arbeitszeit: { vz: 'Vollzeit', tz: 'Teilzeit', snw: 'Schicht / Nacht / Wochenende', mj: 'Minijob' },
