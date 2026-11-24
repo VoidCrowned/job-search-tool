@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+# Personal data (profile, CV, generated letters) – never committed
+data/
+*.log
+*.tsbuildinfo
