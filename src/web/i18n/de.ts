@@ -57,8 +57,9 @@ export const de: Messages = {
     languageDe: 'Deutsch',
     languageEn: 'Englisch',
     writeWithClaude: 'Mit Claude schreiben',
+    viaOpenRouter: (model) => `${model} über OpenRouter`,
     aiHint: (model) => `Claude (${model}) schreibt das Anschreiben aus deinem Profil und der Anzeige. Jedes Anschreiben kostet etwa 8 Cent API-Nutzung. Prüfe jede Angabe, bevor du es abschickst.`,
-    keyHint: 'Damit Claude Anschreiben verfasst, trage einen Anthropic-API-Schlüssel in die Datei .env ein (siehe README).',
+    keyHint: 'Damit Claude Anschreiben verfasst, trage einen API-Schlüssel von Anthropic oder OpenRouter in die Datei .env ein (siehe README).',
     fillTemplate: 'Vorlage ausfüllen',
     working: 'Wird geschrieben…',
     templateHint: 'Ohne API-Schlüssel bekommst du eine Vorlage, die aus deinem Profil ausgefüllt wird. Teile in [Klammern] füllst du selbst aus.',
@@ -203,7 +204,7 @@ export const de: Messages = {
 
   errors: {
     aiRefused: 'Claude hat dieses Anschreiben abgelehnt. Du kannst stattdessen die Vorlage ausfüllen.',
-    aiAuth: 'Der Anthropic-API-Schlüssel wurde abgelehnt. Prüfe ANTHROPIC_API_KEY in .env.',
+    aiAuth: 'Der API-Schlüssel wurde abgelehnt. Prüfe den Schlüssel in .env (ANTHROPIC_API_KEY oder OPENROUTER_API_KEY).',
     aiRateLimit: 'Gerade zu viele Anfragen an Claude. Versuch es in einer Minute noch einmal.',
     aiFailed: 'Claude konnte das Anschreiben nicht verfassen. Versuch es noch einmal oder fülle die Vorlage aus.',
     aiUnavailable: 'Es ist kein Anthropic-API-Schlüssel eingetragen.',

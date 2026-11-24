@@ -179,7 +179,7 @@ describe('letter panel', () => {
     letterServer();
     render(<App />);
     fireEvent.click(await screen.findByText('Write application'));
-    expect(await panel().findByText(/add an Anthropic API key/)).toBeTruthy();
+    expect(await panel().findByText(/add an Anthropic or OpenRouter API key/)).toBeTruthy();
     expect(panel().queryByText('Write with Claude')).toBeNull();
   });
 
@@ -246,5 +246,12 @@ describe('letter panel', () => {
     render(<App />);
     await screen.findByLabelText('Letter text');
     expect(panel().getByText(/Key terms from the ad: 1 of 1/)).toBeTruthy();
+  });
+
+  it('names OpenRouter in the hint when it is the provider', async () => {
+    fakeApi({ '/api/config': () => ({ ai: true, model: 'anthropic/claude-opus-5.5', provider: 'openrouter' }) });
+    render(<App />);
+    fireEvent.click(await screen.findByText('Write application'));
+    expect(await panel().findByText(/anthropic\/claude-opus-5\.5 via OpenRouter/)).toBeTruthy();
   });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type Anthropic from '@anthropic-ai/sdk';
-import { aiConfigFromEnv, buildPrompt, createClaudeGenerator, DEFAULT_MODEL, RefusalError } from './claude.ts';
+import { aiConfigFromEnv, buildPrompt, createClaudeGenerator, DEFAULT_MODEL, DEFAULT_OPENROUTER_MODEL, parseOutput, RefusalError } from './claude.ts';
 import { emptyProfile } from '../../shared/profile.ts';
 import type { JobDetails } from '../../api/types.ts';
 import detailsFixture from '../../api/fixtures/details.json';
@@ -17,14 +17,32 @@ function fakeClient(response: Partial<Anthropic.Beta.BetaMessage>) {
     content: [{ type: 'text', text: JSON.stringify({ letter: 'Sehr geehrte Damen und Herren, …', adKeywords: ['Pflege', 'Teamarbeit'] }) }],
     ...response,
   }));
-  return { client: { beta: { messages: { create } } } as unknown as Anthropic, create };
+  return { client: { beta: { messages: { create } }, messages: { create } } as unknown as Anthropic, create };
 }
 
 describe('aiConfigFromEnv', () => {
   it('is off without a key and defaults to Opus 5.5', () => {
-    expect(aiConfigFromEnv({})).toEqual({ apiKey: undefined, model: DEFAULT_MODEL });
+    expect(aiConfigFromEnv({})).toEqual({ provider: 'anthropic', apiKey: undefined, model: DEFAULT_MODEL });
     expect(aiConfigFromEnv({ ANTHROPIC_API_KEY: '  ' }).apiKey).toBeUndefined();
-    expect(aiConfigFromEnv({ ANTHROPIC_API_KEY: 'k', ANTHROPIC_MODEL: 'claude-sonnet-5-5' })).toEqual({ apiKey: 'k', model: 'claude-sonnet-5-5' });
+  });
+
+  it('uses Anthropic directly for an Anthropic key', () => {
+    expect(aiConfigFromEnv({ ANTHROPIC_API_KEY: 'sk-ant-x', ANTHROPIC_MODEL: 'claude-sonnet-5-5' })).toEqual({
+      provider: 'anthropic',
+      apiKey: 'sk-ant-x',
+      model: 'claude-sonnet-5-5',
+    });
+  });
+
+  it('uses OpenRouter for OPENROUTER_API_KEY, or an OpenRouter key in ANTHROPIC_API_KEY', () => {
+    const expected = { provider: 'openrouter', apiKey: 'sk-or-v1-x', model: DEFAULT_OPENROUTER_MODEL };
+    expect(aiConfigFromEnv({ OPENROUTER_API_KEY: 'sk-or-v1-x' })).toEqual(expected);
+    expect(aiConfigFromEnv({ ANTHROPIC_API_KEY: 'sk-or-v1-x' })).toEqual(expected);
+    expect(aiConfigFromEnv({ OPENROUTER_API_KEY: 'sk-or-v1-x', OPENROUTER_MODEL: 'anthropic/claude-sonnet-5.5' }).model).toBe('anthropic/claude-sonnet-5.5');
+  });
+
+  it('prefers a real Anthropic key over an OpenRouter one', () => {
+    expect(aiConfigFromEnv({ ANTHROPIC_API_KEY: 'sk-ant-x', OPENROUTER_API_KEY: 'sk-or-v1-x' }).provider).toBe('anthropic');
   });
 });
 
@@ -89,6 +107,24 @@ describe('createClaudeGenerator', () => {
     expect(result.letter).toBe('Rescued letter');
   });
 
+  it('via OpenRouter: plain messages endpoint, no beta headers or server-side fallbacks', async () => {
+    const create = vi.fn(async () => ({
+      model: DEFAULT_OPENROUTER_MODEL,
+      stop_reason: 'end_turn',
+      usage: { input_tokens: 1, output_tokens: 2 },
+      content: [{ type: 'text', text: JSON.stringify({ letter: 'OR letter', adKeywords: [] }) }],
+    }));
+    const betaCreate = vi.fn();
+    const client = { messages: { create }, beta: { messages: { create: betaCreate } } } as unknown as Anthropic;
+    const result = await createClaudeGenerator({ provider: 'openrouter', apiKey: 'sk-or-v1-x', model: DEFAULT_OPENROUTER_MODEL }, client)({ profile, job, language: 'de' });
+    expect(result.letter).toBe('OR letter');
+    expect(betaCreate).not.toHaveBeenCalled();
+    const params = (create.mock.calls[0] as unknown[])[0] as Record<string, unknown>;
+    expect(params).toMatchObject({ model: 'anthropic/claude-opus-5.5', thinking: { type: 'adaptive' }, output_config: { effort: 'medium' } });
+    expect(params).not.toHaveProperty('betas');
+    expect(params).not.toHaveProperty('fallbacks');
+  });
+
   it('turns a refusal into a RefusalError', async () => {
     const { client } = fakeClient({ stop_reason: 'refusal', content: [] });
     await expect(createClaudeGenerator({ model: DEFAULT_MODEL }, client)({ profile, job, language: 'de' })).rejects.toBeInstanceOf(RefusalError);
@@ -99,5 +135,21 @@ describe('createClaudeGenerator', () => {
     await expect(createClaudeGenerator({ model: DEFAULT_MODEL }, cut.client)({ profile, job, language: 'de' })).rejects.toThrow(/cut off/);
     const bad = fakeClient({ content: [{ type: 'text', text: '{"letter": ""}' } as Anthropic.Beta.BetaTextBlock] });
     await expect(createClaudeGenerator({ model: DEFAULT_MODEL }, bad.client)({ profile, job, language: 'de' })).rejects.toThrow(/no letter/);
+  });
+});
+
+describe('parseOutput', () => {
+  it('reads the structured JSON answer', () => {
+    expect(parseOutput('{"letter": " Hallo ", "adKeywords": ["A", 3]}')).toEqual({ letter: 'Hallo', adKeywords: ['A'] });
+  });
+
+  it('accepts a plain-text letter when a provider ignored the JSON format', () => {
+    const plain = `Sehr geehrte Damen und Herren,\n\n${'Text '.repeat(30)}`;
+    expect(parseOutput(plain)).toEqual({ letter: plain.trim(), adKeywords: [] });
+  });
+
+  it('rejects empty, too short or broken answers', () => {
+    expect(() => parseOutput('ok')).toThrow(/no letter/);
+    expect(() => parseOutput('{"letter": "abgeschnitten')).toThrow(/incomplete/);
   });
 });
