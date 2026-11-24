@@ -1,5 +1,5 @@
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
   --bg: #f6f7f9;
   --surface: #ffffff;
   --text: #1c1f24;
@@ -15,8 +15,23 @@
   color: var(--text);
 }
 
+/* Theme: data-theme="light"/"dark" on <html> is an explicit choice; without it, the system setting decides. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #15171b;
+  --surface: #1e2127;
+  --text: #e6e8eb;
+  --muted: #9aa3ae;
+  --border: #353a42;
+  --accent: #6aa9ec;
+  --accent-text: #0d1b2a;
+  --badge: #23344a;
+  --error: #f2b8b5;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
     --bg: #15171b;
     --surface: #1e2127;
     --text: #e6e8eb;

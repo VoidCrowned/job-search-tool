@@ -13,6 +13,13 @@ export const de: Messages = {
     pageTitle: (what) => (what ? `${what} · Jobsuche` : 'Jobsuche'),
   },
 
+  theme: {
+    label: 'Design',
+    system: 'System',
+    light: 'Hell',
+    dark: 'Dunkel',
+  },
+
   search: {
     what: 'Was',
     whatPlaceholder: 'Jobtitel, Stichwort',

@@ -15,6 +15,13 @@ export const en = {
     pageTitle: (what?: string) => (what ? `${what} · Jobsuche` : 'Jobsuche'),
   },
 
+  theme: {
+    label: 'Theme',
+    system: 'System',
+    light: 'Light',
+    dark: 'Dark',
+  },
+
   search: {
     what: 'What',
     whatPlaceholder: 'Job title, keyword',

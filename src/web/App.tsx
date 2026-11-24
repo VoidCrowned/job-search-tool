@@ -1,6 +1,7 @@
 import { I18nProvider, LanguageSelect, useT } from './i18n/index.tsx';
 import { JobPage } from './JobPage.tsx';
 import { SearchPage } from './SearchPage.tsx';
+import { ThemeSelect } from './theme.tsx';
 import { onLinkClick, useLocation } from './router.ts';
 
 function Route({ pathname, search }: { pathname: string; search: string }) {
@@ -33,6 +34,7 @@ function Shell() {
         </a>
         <div className="header-controls">
           <LanguageSelect />
+          <ThemeSelect />
         </div>
       </header>
       <main>
