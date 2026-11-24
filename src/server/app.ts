@@ -9,8 +9,11 @@ export interface AppOptions {
   fetch?: typeof fetch;
 }
 
-/** Reference numbers look like "10001-1003891045-S"; external ones can contain letters too. */
-const REFNR = /^[A-Za-z0-9-]{3,80}$/;
+/**
+ * Reference numbers look like "10001-1003891045-S", but external ones contain letters, "." and "_"
+ * ("13643-2L_626832-S"). It's Base64-encoded before going upstream, so only obvious junk is refused.
+ */
+const REFNR = /^[^\s/\\?#]{3,120}$/;
 /** Logo hashes are URL-safe Base64. */
 const LOGO_HASH = /^[A-Za-z0-9_\-+/=]{10,200}$/;
 

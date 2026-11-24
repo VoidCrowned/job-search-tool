@@ -69,6 +69,13 @@ describe('GET /api/jobs/:refnr', () => {
     expect(await res.json()).toEqual({ error: 'gone', code: 'STELLENANGEBOT_NICHT_GEFUNDEN' });
   });
 
+  it.each(['13643-2L_626832-S', '13456-k14802.11829-S', '12951-4a19f40c-d84a-4349--S'])('accepts real reference number %s', async (ref) => {
+    const client = fakeClient();
+    const res = await createApp({ client }).request(`/api/jobs/${encodeURIComponent(ref)}`);
+    expect(res.status).toBe(200);
+    expect(client.getJobDetails).toHaveBeenCalledWith(ref);
+  });
+
   it('rejects malformed reference numbers', async () => {
     const res = await createApp({ client: fakeClient() }).request('/api/jobs/a%20b');
     expect(res.status).toBe(400);
