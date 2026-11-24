@@ -1,29 +1,16 @@
 // Search parameters: allowed values, parsing/validation and conversion to the API query.
 // Shared by the server (validates incoming requests) and the web app (URL state, form).
 
-export const ANGEBOTSART = {
-  '1': 'Job',
-  '2': 'Self-employment',
-  '4': 'Apprenticeship / dual study',
-  '34': 'Internship / trainee',
-} as const;
-export type Angebotsart = keyof typeof ANGEBOTSART;
+// Allowed values only; the web app's translations hold the labels (src/web/i18n/).
+export const ANGEBOTSART = ['1', '2', '4', '34'] as const; // job, self-employment, apprenticeship/dual study, internship/trainee
+export type Angebotsart = (typeof ANGEBOTSART)[number];
 
 // 'ho' (home office) is listed in the old docs but the live API returns 0 results for it, so it is left out.
-export const ARBEITSZEIT = {
-  vz: 'Full-time',
-  tz: 'Part-time',
-  snw: 'Shifts / nights / weekends',
-  mj: 'Mini-job',
-} as const;
-export type Arbeitszeit = keyof typeof ARBEITSZEIT;
+export const ARBEITSZEIT = ['vz', 'tz', 'snw', 'mj'] as const; // full-time, part-time, shifts/nights/weekends, mini-job
+export type Arbeitszeit = (typeof ARBEITSZEIT)[number];
 
-export const BEFRISTUNG = {
-  '1': 'Fixed-term',
-  '2': 'Permanent',
-  '3': 'Not stated',
-} as const;
-export type Befristung = keyof typeof BEFRISTUNG;
+export const BEFRISTUNG = ['1', '2', '3'] as const; // fixed-term, permanent, not stated
+export type Befristung = (typeof BEFRISTUNG)[number];
 
 /** Choices offered in the form. The API accepts any whole number from 0 to 100 (days since publication). */
 export const VEROEFFENTLICHTSEIT_CHOICES = [0, 1, 7, 14, 28] as const;
@@ -109,16 +96,17 @@ export function parseSearchParams(input: Input): ParseResult {
 
   const angebotsart = get(input, 'angebotsart');
   if (angebotsart !== undefined) {
-    if (angebotsart in ANGEBOTSART) params.angebotsart = angebotsart as Angebotsart;
+    if ((ANGEBOTSART as readonly string[]).includes(angebotsart)) params.angebotsart = angebotsart as Angebotsart;
     else errors.push(`angebotsart: unknown value "${angebotsart}"`);
   }
 
-  const enumList = <T extends string>(key: string, allowed: Record<T, string>): T[] | undefined => {
+  const enumList = <T extends string>(key: string, allowed: readonly T[]): T[] | undefined => {
+    const ok = (v: string): v is T => (allowed as readonly string[]).includes(v);
     const values = list(get(input, key));
     if (values.length === 0) return undefined;
-    const bad = values.filter((v) => !(v in allowed));
+    const bad = values.filter((v) => !ok(v));
     if (bad.length) errors.push(`${key}: unknown value(s) ${bad.map((b) => `"${b}"`).join(', ')}`);
-    const good = [...new Set(values.filter((v): v is T => v in allowed))];
+    const good = [...new Set(values.filter(ok))];
     return good.length ? good : undefined;
   };
   params.arbeitszeit = enumList('arbeitszeit', ARBEITSZEIT);

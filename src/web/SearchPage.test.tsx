@@ -14,6 +14,7 @@ beforeEach(() => window.history.replaceState(null, '', '/'));
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  localStorage.clear();
 });
 
 describe('search page', () => {
@@ -51,7 +52,28 @@ describe('search page', () => {
     window.history.replaceState(null, '', '/?was=x');
     mockFetch({ error: 'The Jobsuche API could not be reached.' }, 502);
     render(<App />);
-    expect(await screen.findByText('The Jobsuche API could not be reached.')).toBeTruthy();
+    expect(await screen.findByText(/The Jobsuche API is not answering right now/)).toBeTruthy();
+  });
+
+  it('switches the language and remembers it', async () => {
+    window.history.replaceState(null, '', '/?was=Pflege&wo=Hamburg');
+    mockFetch(searchFixture);
+    render(<App />);
+    await screen.findByText(/3,842 jobs/);
+    fireEvent.change(screen.getByLabelText('Language'), { target: { value: 'de' } });
+    expect(screen.getByText(/3\.842 Jobs bei Hamburg/)).toBeTruthy();
+    expect(screen.getByText('Suchen')).toBeTruthy();
+    expect(screen.getByText('Weiter →')).toBeTruthy();
+    expect(document.documentElement.lang).toBe('de');
+    expect(localStorage.getItem('jobsuche:lang')).toBe('de');
+  });
+
+  it('starts in the saved language', () => {
+    localStorage.setItem('jobsuche:lang', 'es');
+    mockFetch(searchFixture);
+    render(<App />);
+    expect(screen.getByText('Buscar')).toBeTruthy();
+    expect(screen.getByText(/Introduce un puesto/)).toBeTruthy();
   });
 
   it('shows an empty state', async () => {
