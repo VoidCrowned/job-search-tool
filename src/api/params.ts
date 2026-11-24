@@ -151,7 +151,10 @@ export function toApiQuery(params: SearchParams): URLSearchParams {
 /** Same as toApiQuery, but leaves out defaults so URLs stay short. Used for the web app's own URLs. */
 export function toAppQuery(params: SearchParams): URLSearchParams {
   const q = toApiQuery(params);
-  if (params.page === 1) q.delete('page');
-  if (params.size === DEFAULT_SIZE) q.delete('size');
+  // Paging goes last so URLs read "what, where, filters, page".
+  q.delete('page');
+  q.delete('size');
+  if (params.page !== 1) q.set('page', String(params.page));
+  if (params.size !== DEFAULT_SIZE) q.set('size', String(params.size));
   return q;
 }
