@@ -17,6 +17,18 @@ export class RequestError extends Error {
 /** The error text to show, in the current language. */
 export function errorText(err: RequestError, t: Messages): string {
   if (err.status === 0) return t.errors.serverDown;
+  switch (err.code) {
+    case 'AI_REFUSED':
+      return t.errors.aiRefused;
+    case 'AI_AUTH':
+      return t.errors.aiAuth;
+    case 'AI_RATE_LIMIT':
+      return t.errors.aiRateLimit;
+    case 'AI_ERROR':
+      return t.errors.aiFailed;
+    case 'AI_UNAVAILABLE':
+      return t.errors.aiUnavailable;
+  }
   if (err.status === 404) return t.errors.notFound;
   if (err.status === 400) return t.errors.invalid;
   if (err.status === 502 || err.status === 503 || err.status === 504) return t.errors.upstream;

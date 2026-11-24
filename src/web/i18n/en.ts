@@ -54,6 +54,9 @@ export const en = {
     languageAuto: 'Automatic (from the ad)',
     languageDe: 'German',
     languageEn: 'English',
+    writeWithClaude: 'Write with Claude',
+    aiHint: (model: string) => `Claude (${model}) writes the letter from your profile and the ad. Each letter costs about 8 cents of API usage. Check every fact before you send it.`,
+    keyHint: 'To let Claude write letters, add an Anthropic API key to the .env file (see README).',
     fillTemplate: 'Fill template',
     working: 'Writing…',
     templateHint: 'Without an API key, you get a template filled from your profile. Parts in [brackets] are for you to fill in.',
@@ -182,6 +185,11 @@ export const en = {
   },
 
   errors: {
+    aiRefused: 'Claude declined to write this letter. You can fill the template instead.',
+    aiAuth: 'The Anthropic API key was rejected. Check ANTHROPIC_API_KEY in .env.',
+    aiRateLimit: 'Too many requests to Claude right now. Try again in a minute.',
+    aiFailed: 'Claude could not write the letter. Try again, or fill the template.',
+    aiUnavailable: 'No Anthropic API key is set.',
     serverDown: 'The local server is not reachable. Is `npm run dev` running?',
     notFound: 'This job ad no longer exists.',
     upstream: 'The Jobsuche API is not answering right now. Try again in a moment.',

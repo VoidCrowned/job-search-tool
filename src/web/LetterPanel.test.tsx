@@ -173,4 +173,42 @@ describe('letter panel', () => {
     await screen.findByLabelText('Letter text');
     expect(panel().queryByText(/Earlier versions/)).toBeNull();
   });
+
+  it('without a key: only the template, plus a hint how to enable Claude', async () => {
+    letterServer();
+    render(<App />);
+    fireEvent.click(await screen.findByText('Write application'));
+    expect(await panel().findByText(/add an Anthropic API key/)).toBeTruthy();
+    expect(panel().queryByText('Write with Claude')).toBeNull();
+  });
+
+  it('with a key: writes with Claude and shows the cost hint', async () => {
+    const calls: unknown[] = [];
+    fakeApi({
+      '/api/config': () => ({ ai: true, model: 'claude-opus-5-5' }),
+      [`/api/letters/${ref}/generate`]: (_url, init) => {
+        calls.push(JSON.parse(init!.body as string));
+        return add({ source: 'claude', language: 'de', text: 'Letter by Claude', adKeywords: ['Pflege'] });
+      },
+      [`/api/letters/${ref}`]: () => file,
+    });
+    render(<App />);
+    fireEvent.click(await screen.findByText('Write application'));
+    expect(await panel().findByText(/Claude \(claude-opus-5-5\) writes the letter.*about 8 cents/)).toBeTruthy();
+    fireEvent.click(panel().getByText('Write with Claude'));
+    expect(((await panel().findByLabelText('Letter text')) as HTMLTextAreaElement).value).toBe('Letter by Claude');
+    expect(calls).toEqual([{ language: 'auto', mode: 'ai' }]);
+  });
+
+  it('explains a refusal and keeps the template available', async () => {
+    fakeApi({
+      '/api/config': () => ({ ai: true, model: 'claude-opus-5-5' }),
+      [`/api/letters/${ref}/generate`]: () => new Response(JSON.stringify({ error: 'x', code: 'AI_REFUSED' }), { status: 422 }),
+    });
+    render(<App />);
+    fireEvent.click(await screen.findByText('Write application'));
+    fireEvent.click(await panel().findByText('Write with Claude'));
+    expect(await panel().findByText(/Claude declined to write this letter/)).toBeTruthy();
+    expect(panel().getByText('Fill template')).toBeTruthy();
+  });
 });

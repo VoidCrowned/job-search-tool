@@ -17,7 +17,7 @@
 
 ## M3: Application texts
 - [x] Local profile (#6)
-- [ ] Application text via Claude API (#7)
+- [x] Application text via Claude API (#7)
 - [x] Application text template fallback (#8)
 - [x] Letter history per job (#37)
 - [ ] ATS-ready letters (#38)

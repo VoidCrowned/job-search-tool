@@ -8,12 +8,14 @@ import { emptyProfile } from '../shared/profile.ts';
 import type { JobsucheClient } from '../api/client.ts';
 import type { LetterFile, LetterVersion } from '../shared/letter.ts';
 import detailsFixture from '../api/fixtures/details.json';
+import Anthropic from '@anthropic-ai/sdk';
+import { RefusalError, type LetterGenerator } from './letter/claude.ts';
 
 const ref = detailsFixture.referenznummer;
 let dir: string;
 let client: JobsucheClient;
 
-const app = () => createApp({ client, storage: createStorage(dir) });
+const app = () => createApp({ client, storage: createStorage(dir), generator: null });
 const post = (path: string, body: unknown) =>
   app().request(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 
@@ -82,5 +84,48 @@ describe('letters API', () => {
   it('makes safe file names', () => {
     expect(letterFileName('13643-2L_626832-S')).toBe('13643-2L_626832-S.json');
     expect(letterFileName('a:b*c')).toBe('a_b_c.json');
+  });
+});
+
+describe('letters API with Claude', () => {
+  const withAi = (generator: LetterGenerator) => createApp({ client, storage: createStorage(dir), generator, model: 'claude-opus-5-5' });
+  const postAi = (generator: LetterGenerator, body: unknown) =>
+    withAi(generator).request(`/api/letters/${ref}/generate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+
+  it('reports the model in /api/config', async () => {
+    expect(await (await withAi(vi.fn()).request('/api/config')).json()).toEqual({ ai: true, model: 'claude-opus-5-5' });
+  });
+
+  it('uses Claude by default when available and stores the keywords', async () => {
+    const generator = vi.fn(async () => ({ letter: 'Claude letter', adKeywords: ['Pflege'] }));
+    const { version } = (await (await postAi(generator, { language: 'auto' })).json()) as { version: LetterVersion };
+    expect(version).toMatchObject({ source: 'claude', language: 'de', text: 'Claude letter', adKeywords: ['Pflege'] });
+    expect(generator).toHaveBeenCalledWith(expect.objectContaining({ language: 'de', job: expect.objectContaining({ referenznummer: ref }) }));
+    expect(((generator.mock.calls[0] as unknown[])[0] as { profile: { name: string } }).profile.name).toBe('Void Example');
+  });
+
+  it('still fills the template when asked', async () => {
+    const generator = vi.fn();
+    const { version } = (await (await postAi(generator, { mode: 'template' })).json()) as { version: LetterVersion };
+    expect(version.source).toBe('template');
+    expect(generator).not.toHaveBeenCalled();
+  });
+
+  it('refuses AI mode without a key', async () => {
+    const res = await post(`/api/letters/${ref}/generate`, { mode: 'ai' });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ code: 'AI_UNAVAILABLE' });
+  });
+
+  it('maps refusals and API errors to clear codes without storing anything', async () => {
+    const refused = await postAi(vi.fn(async () => { throw new RefusalError(); }), {});
+    expect(refused.status).toBe(422);
+    expect(await refused.json()).toMatchObject({ code: 'AI_REFUSED' });
+    const auth = await postAi(vi.fn(async () => { throw new Anthropic.AuthenticationError(401, undefined, 'invalid x-api-key', new Headers()); }), {});
+    expect(auth.status).toBe(502);
+    expect(await auth.json()).toMatchObject({ code: 'AI_AUTH' });
+    const limit = await postAi(vi.fn(async () => { throw new Anthropic.RateLimitError(429, undefined, 'slow down', new Headers()); }), {});
+    expect(await limit.json()).toMatchObject({ code: 'AI_RATE_LIMIT' });
+    expect((await createStorage(dir).readLetters(ref))?.versions ?? []).toEqual([]);
   });
 });

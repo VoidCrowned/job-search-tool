@@ -52,6 +52,9 @@ export const de: Messages = {
     languageAuto: 'Automatisch (nach Anzeige)',
     languageDe: 'Deutsch',
     languageEn: 'Englisch',
+    writeWithClaude: 'Mit Claude schreiben',
+    aiHint: (model) => `Claude (${model}) schreibt das Anschreiben aus deinem Profil und der Anzeige. Jedes Anschreiben kostet etwa 8 Cent API-Nutzung. Prüfe jede Angabe, bevor du es abschickst.`,
+    keyHint: 'Damit Claude Anschreiben verfasst, trage einen Anthropic-API-Schlüssel in die Datei .env ein (siehe README).',
     fillTemplate: 'Vorlage ausfüllen',
     working: 'Wird geschrieben…',
     templateHint: 'Ohne API-Schlüssel bekommst du eine Vorlage, die aus deinem Profil ausgefüllt wird. Teile in [Klammern] füllst du selbst aus.',
@@ -179,6 +182,11 @@ export const de: Messages = {
   },
 
   errors: {
+    aiRefused: 'Claude hat dieses Anschreiben abgelehnt. Du kannst stattdessen die Vorlage ausfüllen.',
+    aiAuth: 'Der Anthropic-API-Schlüssel wurde abgelehnt. Prüfe ANTHROPIC_API_KEY in .env.',
+    aiRateLimit: 'Gerade zu viele Anfragen an Claude. Versuch es in einer Minute noch einmal.',
+    aiFailed: 'Claude konnte das Anschreiben nicht verfassen. Versuch es noch einmal oder fülle die Vorlage aus.',
+    aiUnavailable: 'Es ist kein Anthropic-API-Schlüssel eingetragen.',
     serverDown: 'Der lokale Server ist nicht erreichbar. Läuft `npm run dev`?',
     notFound: 'Diese Stellenanzeige gibt es nicht mehr.',
     upstream: 'Die Jobsuche-API antwortet gerade nicht. Versuch es gleich noch einmal.',

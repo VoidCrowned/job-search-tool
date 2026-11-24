@@ -8,6 +8,8 @@ import { isLanguageChoice, MAX_LETTER_LENGTH, type LetterFile, type LetterLangua
 import { parseProfile } from '../shared/profile.ts';
 import { detectLanguage } from './letter/language.ts';
 import { fillTemplate } from './letter/template.ts';
+import Anthropic from '@anthropic-ai/sdk';
+import { aiConfigFromEnv, createClaudeGenerator, RefusalError, type LetterGenerator } from './letter/claude.ts';
 import { createStorage, type Storage } from './storage.ts';
 
 export interface AppOptions {
@@ -15,6 +17,10 @@ export interface AppOptions {
   /** Used for logo requests. */
   fetch?: typeof fetch;
   storage?: Storage;
+  /** Writes letters with Claude. `null` = no AI (template only). Default: from ANTHROPIC_API_KEY. */
+  generator?: LetterGenerator | null;
+  /** Shown in /api/config. */
+  model?: string;
 }
 
 /** Host names the API answers to. Anything else (e.g. a DNS-rebinding attack from a website) is refused. */
@@ -32,6 +38,10 @@ export function createApp(options: AppOptions = {}) {
   const client = options.client ?? createJobsucheClient();
   const doFetch = options.fetch ?? globalThis.fetch;
   const storage = options.storage ?? createStorage();
+  const aiConfig = aiConfigFromEnv();
+  const generator =
+    options.generator !== undefined ? options.generator : aiConfig.apiKey ? createClaudeGenerator(aiConfig) : null;
+  const model = options.model ?? aiConfig.model;
   const app = new Hono();
 
   // Personal data is served here, so only answer requests addressed to this machine.
@@ -41,6 +51,17 @@ export function createApp(options: AppOptions = {}) {
   });
 
   app.onError((err, c) => {
+    if (err instanceof RefusalError) return c.json({ error: err.message, code: 'AI_REFUSED' }, 422);
+    if (err instanceof Anthropic.AuthenticationError || err instanceof Anthropic.PermissionDeniedError) {
+      return c.json({ error: 'The Anthropic API key was rejected.', code: 'AI_AUTH' }, 502);
+    }
+    if (err instanceof Anthropic.RateLimitError) {
+      return c.json({ error: 'Anthropic rate limit reached.', code: 'AI_RATE_LIMIT' }, 503);
+    }
+    if (err instanceof Anthropic.APIError) {
+      console.error('Anthropic API error', err.status, err.message);
+      return c.json({ error: 'Claude could not write the letter.', code: 'AI_ERROR' }, 502);
+    }
     if (err instanceof JobsucheError) {
       // Pass 400/404 through; anything else is the upstream API's fault.
       const status = (err.status === 400 || err.status === 404 ? err.status : 502) as ContentfulStatusCode;
@@ -52,7 +73,7 @@ export function createApp(options: AppOptions = {}) {
 
   app.get('/api/health', (c) => c.json({ ok: true }));
 
-  app.get('/api/config', (c) => c.json({ ai: false }));
+  app.get('/api/config', (c) => c.json(generator ? { ai: true, model } : { ai: false }));
 
   const lettersFor = async (refnr: string, job?: JobDetails): Promise<LetterFile> => {
     const file = (await storage.readLetters(refnr)) ?? { refnr, jobTitle: '', versions: [] };
@@ -79,14 +100,23 @@ export function createApp(options: AppOptions = {}) {
   app.post('/api/letters/:refnr/generate', async (c) => {
     const refnr = c.req.param('refnr');
     if (!REFNR.test(refnr)) return c.json({ error: 'Invalid reference number.' }, 400);
-    const body = (await c.req.json().catch(() => ({}))) as { language?: unknown };
+    const body = (await c.req.json().catch(() => ({}))) as { language?: unknown; mode?: unknown };
     const choice = body.language ?? 'auto';
     if (!isLanguageChoice(choice)) return c.json({ error: 'Invalid language.' }, 400);
+    const mode = body.mode ?? (generator ? 'ai' : 'template');
+    if (mode !== 'ai' && mode !== 'template') return c.json({ error: 'Invalid mode.' }, 400);
+    if (mode === 'ai' && !generator) return c.json({ error: 'No Anthropic API key is set.', code: 'AI_UNAVAILABLE' }, 400);
 
     const [job, profile] = await Promise.all([client.getJobDetails(refnr), storage.readProfile()]);
     const language: LetterLanguage =
       choice === 'auto' ? detectLanguage(job.stellenangebotsTitel, job.stellenangebotsBeschreibung) : choice;
     const file = await lettersFor(refnr, job);
+
+    if (mode === 'ai' && generator) {
+      const result = await generator({ profile, job, language });
+      const version = await addVersion(file, { source: 'claude', language, text: result.letter, adKeywords: result.adKeywords });
+      return c.json({ file, version });
+    }
     const version = await addVersion(file, { source: 'template', language, text: fillTemplate(profile, job, language) });
     return c.json({ file, version });
   });

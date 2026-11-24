@@ -52,6 +52,9 @@ export const es: Messages = {
     languageAuto: 'Automático (según el anuncio)',
     languageDe: 'Alemán',
     languageEn: 'Inglés',
+    writeWithClaude: 'Escribir con Claude',
+    aiHint: (model) => `Claude (${model}) redacta la carta a partir de tu perfil y del anuncio. Cada carta cuesta unos 8 céntimos de uso de la API. Revisa cada dato antes de enviarla.`,
+    keyHint: 'Para que Claude redacte cartas, añade una clave de API de Anthropic al archivo .env (ver README).',
     fillTemplate: 'Rellenar plantilla',
     working: 'Redactando…',
     templateHint: 'Sin clave de API obtienes una plantilla rellenada con tu perfil. Las partes entre [corchetes] las completas tú.',
@@ -179,6 +182,11 @@ export const es: Messages = {
   },
 
   errors: {
+    aiRefused: 'Claude ha rechazado redactar esta carta. Puedes rellenar la plantilla en su lugar.',
+    aiAuth: 'Se ha rechazado la clave de API de Anthropic. Revisa ANTHROPIC_API_KEY en .env.',
+    aiRateLimit: 'Demasiadas solicitudes a Claude ahora mismo. Inténtalo de nuevo en un minuto.',
+    aiFailed: 'Claude no ha podido redactar la carta. Inténtalo de nuevo o rellena la plantilla.',
+    aiUnavailable: 'No hay ninguna clave de API de Anthropic configurada.',
     serverDown: 'El servidor local no responde. ¿Está ejecutándose `npm run dev`?',
     notFound: 'Esta oferta ya no existe.',
     upstream: 'La API de Jobsuche no responde ahora mismo. Inténtalo de nuevo en un momento.',
