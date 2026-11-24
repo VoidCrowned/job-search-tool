@@ -12,7 +12,7 @@
 ## M2b: Website polish
 - [x] Display languages: English, German, Spanish (#19)
 - [x] Dark and light mode (#20)
-- [ ] Expand jobs inside the result list (#21)
+- [x] Expand jobs inside the result list (#21)
 - [ ] Back to top and collapse all (#22)
 
 ## M3: Application texts

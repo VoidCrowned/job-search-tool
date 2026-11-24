@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { App } from './App.tsx';
 import { renderMarkdown } from './markdown.ts';
+import { clearJobDetailsCache } from './jobDetails.ts';
 import detailsFixture from '../api/fixtures/details.json';
 
 function mockFetch(body: unknown, status = 200) {
@@ -15,6 +16,7 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   sessionStorage.clear();
+  clearJobDetailsCache();
   localStorage.clear();
 });
 
@@ -50,7 +52,8 @@ describe('job page', () => {
     expect(screen.getByText(/Gemeinsam die Pflege von morgen gestalten/)).toBeTruthy();
     expect(screen.getByText(/View on arbeitsagentur.de/).getAttribute('href')).toBe(`https://www.arbeitsagentur.de/jobsuche/jobdetail/${ref}`);
     expect(screen.getByRole('img').getAttribute('src')).toBe(`/api/logo/${encodeURIComponent(detailsFixture.arbeitgeberKundennummerHash)}`);
-    expect(document.title).toBe(`${detailsFixture.stellenangebotsTitel} · Jobsuche`);
+    // The title is set in an effect after the content renders, so wait for it.
+    await waitFor(() => expect(document.title).toBe(`${detailsFixture.stellenangebotsTitel} · Jobsuche`));
   });
 
   it('links back to the last search', async () => {

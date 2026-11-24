@@ -138,3 +138,13 @@ label.check { display: inline-flex; gap: 0.4rem; align-items: center; font-size:
 .facts dd { margin: 0; }
 .description { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.5rem 1.25rem; overflow-wrap: anywhere; }
 .description h1, .description h2, .description h3 { font-size: 1.1rem; margin: 1.25rem 0 0.5rem; }
+
+/* Expanded cards */
+.job-card.expanded { border-color: var(--accent); }
+.job-body { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border); }
+.job-body .facts { background: var(--bg); }
+.job-body .description { background: var(--bg); }
+.job-body .actions { align-items: center; margin-top: 0; }
+.logo.small { width: 44px; height: 44px; }
+.job-body-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 0.75rem; }
+.link-button { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; text-decoration: underline; }

@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent, type MouseEvent } from 'react';
 import {
   ANGEBOTSART,
   ARBEITSZEIT,
@@ -15,6 +15,8 @@ import type { JobSearchItem, SearchResponse } from '../api/types.ts';
 import { errorText, useJson } from './api.ts';
 import { formatDate, formatNumber, formatPay, formatPlace } from './format.ts';
 import { useT } from './i18n/index.tsx';
+import { JobDetailsView } from './JobDetailsView.tsx';
+import { useJobDetails } from './jobDetails.ts';
 import { rememberSearch } from './lastSearch.ts';
 import { navigate, onLinkClick } from './router.ts';
 
@@ -44,7 +46,8 @@ export function SearchPage({ search }: { search: string }) {
         {result.state === 'idle' && <p className="hint">{t.search.idle}</p>}
         {result.state === 'loading' && <p className="hint">{t.search.loading}</p>}
         {result.state === 'error' && <p className="error">{errorText(result.error, t)}</p>}
-        {result.state === 'done' && <Results data={result.data} params={params} />}
+        {/* Keyed on the query so expanded cards reset for a new search or page. */}
+        {result.state === 'done' && <Results key={query} data={result.data} params={params} />}
       </section>
     </>
   );
@@ -178,6 +181,14 @@ function SearchForm({ initial }: { initial: SearchParams }) {
 function Results({ data, params }: { data: SearchResponse; params: SearchParams }) {
   const t = useT();
   const items = data.ergebnisliste ?? [];
+  // Several cards can be open at once, so this is a set rather than a single id.
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
+  const toggle = (refnr: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(refnr)) next.add(refnr);
+      return next;
+    });
   if (data.maxErgebnisse === 0 || items.length === 0) {
     return <p className="hint">{t.search.noResults}</p>;
   }
@@ -192,7 +203,12 @@ function Results({ data, params }: { data: SearchResponse; params: SearchParams 
       </p>
       <ol className="job-list">
         {items.map((job) => (
-          <JobCard key={job.referenznummer} job={job} />
+          <JobCard
+            key={job.referenznummer}
+            job={job}
+            expanded={expanded.has(job.referenznummer)}
+            onToggle={() => toggle(job.referenznummer)}
+          />
         ))}
       </ol>
       <nav className="pager" aria-label={t.search.pages}>
@@ -216,14 +232,24 @@ function Results({ data, params }: { data: SearchResponse; params: SearchParams 
   );
 }
 
-function JobCard({ job }: { job: JobSearchItem }) {
+function JobCard({ job, expanded, onToggle }: { job: JobSearchItem; expanded: boolean; onToggle: () => void }) {
   const t = useT();
   const place = formatPlace(job, t);
   const pay = formatPay(job, t);
   const published = formatDate(job.veroeffentlichungszeitraum?.von ?? job.datumErsteVeroeffentlichung, t);
+  const href = `/job/${encodeURIComponent(job.referenznummer)}`;
+  const bodyId = `job-${job.referenznummer}`;
+
+  function onTitleClick(e: MouseEvent<HTMLAnchorElement>) {
+    // Ctrl/Cmd/Shift/middle click keep the browser's default: open the job page in a new tab or window.
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    onToggle();
+  }
+
   return (
-    <li className="job-card">
-      <a className="job-title" href={`/job/${encodeURIComponent(job.referenznummer)}`} onClick={onLinkClick}>
+    <li className={expanded ? 'job-card expanded' : 'job-card'}>
+      <a className="job-title" href={href} onClick={onTitleClick} aria-expanded={expanded} aria-controls={bodyId}>
         {job.stellenangebotsTitel}
       </a>
       <div className="job-meta">
@@ -241,6 +267,27 @@ function JobCard({ job }: { job: JobSearchItem }) {
         {pay && <span className="badge">{pay}</span>}
         {job.externeURL && <span className="badge muted">{t.card.externalAd}</span>}
       </div>
+      {expanded && (
+        <div className="job-body" id={bodyId}>
+          <CardDetails refnr={job.referenznummer} />
+          <div className="job-body-footer">
+            <a href={href} onClick={onLinkClick}>
+              {t.card.openAsPage}
+            </a>
+            <button type="button" className="link-button" onClick={onToggle}>
+              {t.card.collapse}
+            </button>
+          </div>
+        </div>
+      )}
     </li>
   );
+}
+
+function CardDetails({ refnr }: { refnr: string }) {
+  const t = useT();
+  const result = useJobDetails(refnr);
+  if (result.state === 'error') return <p className="error">{errorText(result.error, t)}</p>;
+  if (result.state !== 'done') return <p className="hint">{t.job.loading}</p>;
+  return <JobDetailsView job={result.data} compact />;
 }
