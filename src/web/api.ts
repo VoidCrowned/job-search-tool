@@ -1,12 +1,26 @@
 // Browser-side calls to my local server (never to the Jobsuche API directly).
 import { useEffect, useState } from 'react';
 
+import type { Messages } from './i18n/en.ts';
+
+/** status 0 = the local server itself could not be reached. */
 export class RequestError extends Error {
   readonly status: number;
-  constructor(status: number, message: string) {
+  readonly code?: string;
+  constructor(status: number, message: string, code?: string) {
     super(message);
     this.status = status;
+    this.code = code;
   }
+}
+
+/** The error text to show, in the current language. */
+export function errorText(err: RequestError, t: Messages): string {
+  if (err.status === 0) return t.errors.serverDown;
+  if (err.status === 404) return t.errors.notFound;
+  if (err.status === 400) return t.errors.invalid;
+  if (err.status === 502 || err.status === 503 || err.status === 504) return t.errors.upstream;
+  return t.errors.generic(err.status);
 }
 
 export async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
@@ -15,12 +29,12 @@ export async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> 
     res = await fetch(url, { signal });
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') throw err;
-    throw new RequestError(0, 'The local server is not reachable. Is `npm run dev` running?');
+    throw new RequestError(0, 'The local server is not reachable.');
   }
   if (!res.ok) {
-    const body = (await res.json().catch(() => undefined)) as { error?: string; details?: string[] } | undefined;
+    const body = (await res.json().catch(() => undefined)) as { error?: string; code?: string; details?: string[] } | undefined;
     const message = [body?.error ?? `Request failed (${res.status}).`, ...(body?.details ?? [])].join(' ');
-    throw new RequestError(res.status, message);
+    throw new RequestError(res.status, message, body?.code);
   }
   return (await res.json()) as T;
 }

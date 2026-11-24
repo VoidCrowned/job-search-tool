@@ -1,27 +1,34 @@
 import { useEffect, useMemo, useState } from 'react';
 import { jobPageUrl } from '../api/client.ts';
 import type { JobDetails } from '../api/types.ts';
-import { useJson } from './api.ts';
+import { errorText, useJson } from './api.ts';
 import { formatContract, formatDate, formatOfferType, formatPay, workingTimes } from './format.ts';
-import { renderMarkdown } from './markdown.ts';
+import { useT } from './i18n/index.tsx';
 import { lastSearchHref } from './lastSearch.ts';
+import { renderMarkdown } from './markdown.ts';
 import { onLinkClick } from './router.ts';
 
 export function JobPage({ refnr }: { refnr: string }) {
+  const t = useT();
   const result = useJson<JobDetails>(`/api/jobs/${encodeURIComponent(refnr)}`);
+  const title = result.state === 'done' ? result.data.stellenangebotsTitel : undefined;
+
+  useEffect(() => {
+    document.title = t.app.pageTitle(title);
+  }, [t, title]);
 
   return (
     <article className="job-page">
       <a href={lastSearchHref()} onClick={onLinkClick} className="back">
-        ← Back to results
+        {t.job.back}
       </a>
-      {result.state === 'loading' && <p className="hint">Loading job ad…</p>}
+      {result.state === 'loading' && <p className="hint">{t.job.loading}</p>}
       {result.state === 'error' && (
         <p className="error">
-          {result.error.message}{' '}
+          {errorText(result.error, t)}{' '}
           {result.error.status === 404 && (
             <a href={jobPageUrl(refnr)} target="_blank" rel="noopener noreferrer">
-              Try it on arbeitsagentur.de
+              {t.job.tryOriginal}
             </a>
           )}
         </p>
@@ -38,30 +45,42 @@ function Logo({ hash, alt }: { hash: string; alt: string }) {
 }
 
 function JobView({ job }: { job: JobDetails }) {
-  useEffect(() => {
-    document.title = `${job.stellenangebotsTitel} · Jobsuche`;
-  }, [job.stellenangebotsTitel]);
+  const t = useT();
   const description = useMemo(
     () => (job.stellenangebotsBeschreibung ? renderMarkdown(job.stellenangebotsBeschreibung) : undefined),
     [job.stellenangebotsBeschreibung],
   );
   const places = (job.stellenlokationen ?? [])
-    .map((l) => [l.adresse?.strasse && `${l.adresse.strasse}${l.adresse.hausnummer ? ` ${l.adresse.hausnummer}` : ''}`, [l.adresse?.plz, l.adresse?.ort].filter(Boolean).join(' ')].filter(Boolean).join(', '))
+    .map((l) =>
+      [
+        l.adresse?.strasse && `${l.adresse.strasse}${l.adresse.hausnummer ? ` ${l.adresse.hausnummer}` : ''}`,
+        [l.adresse?.plz, l.adresse?.ort].filter(Boolean).join(' '),
+      ]
+        .filter(Boolean)
+        .join(', '),
+    )
     .filter(Boolean);
-  const times = workingTimes(job);
-  const start = formatDate(job.eintrittszeitraum?.von);
+  const times = workingTimes(job, t);
+  const startIso = job.eintrittszeitraum?.von;
+  const start = formatDate(startIso, t);
+  const homeOffice = job.homeofficemoeglich
+    ? job.homeofficetyp === 'NACH_VEREINBARUNG'
+      ? t.job.homeOfficeByArrangement
+      : t.job.homeOfficePossible
+    : undefined;
+  const f = t.job.facts;
   const facts: [string, string | undefined][] = [
-    ['Place', places.join(' · ') || undefined],
-    ['Type', formatOfferType(job)],
-    ['Working time', times.join(', ') || undefined],
-    ['Contract', formatContract(job)],
-    ['Start', start && (new Date(job.eintrittszeitraum!.von!) <= new Date() ? 'As soon as possible' : `From ${start}`)],
-    ['Pay', formatPay(job)],
-    ['Home office', job.homeofficemoeglich ? (job.homeofficetyp === 'NACH_VEREINBARUNG' ? 'Possible, by arrangement' : 'Possible') : undefined],
-    ['Occupation', job.hauptberuf],
-    ['Temp agency', job.istArbeitnehmerUeberlassung ? 'Yes (temporary agency work)' : undefined],
-    ['Published', formatDate(job.veroeffentlichungszeitraum?.von ?? job.datumErsteVeroeffentlichung)],
-    ['Reference', job.referenznummer],
+    [f.place, places.join(' · ') || undefined],
+    [f.type, formatOfferType(job, t)],
+    [f.workingTime, times.join(', ') || undefined],
+    [f.contract, formatContract(job, t)],
+    [f.start, start && (new Date(startIso!) <= new Date() ? t.job.asap : t.job.startFrom(start))],
+    [f.pay, formatPay(job, t)],
+    [f.homeOffice, homeOffice],
+    [f.occupation, job.hauptberuf],
+    [f.tempAgency, job.istArbeitnehmerUeberlassung ? t.job.tempAgencyYes : undefined],
+    [f.published, formatDate(job.veroeffentlichungszeitraum?.von ?? job.datumErsteVeroeffentlichung, t)],
+    [f.reference, job.referenznummer],
   ];
   let externalHost: string | undefined;
   try {
@@ -73,7 +92,7 @@ function JobView({ job }: { job: JobDetails }) {
   return (
     <>
       <header className="job-header">
-        {job.arbeitgeberKundennummerHash && <Logo hash={job.arbeitgeberKundennummerHash} alt={job.firma ? `${job.firma} logo` : 'Employer logo'} />}
+        {job.arbeitgeberKundennummerHash && <Logo hash={job.arbeitgeberKundennummerHash} alt={t.job.logoAlt(job.firma)} />}
         <div>
           <h1>{job.stellenangebotsTitel}</h1>
           {job.firma && <p className="company">{job.firma}</p>}
@@ -83,17 +102,17 @@ function JobView({ job }: { job: JobDetails }) {
       <div className="actions">
         {job.externeURL && externalHost && (
           <a className="button primary" href={job.externeURL} target="_blank" rel="noopener noreferrer">
-            Full ad on {externalHost} ↗
+            {t.job.fullAdOn(externalHost)}
           </a>
         )}
         <a className={job.externeURL ? 'button' : 'button primary'} href={jobPageUrl(job.referenznummer)} target="_blank" rel="noopener noreferrer">
-          View on arbeitsagentur.de ↗
+          {t.job.viewOriginal}
         </a>
       </div>
 
       <dl className="facts">
         {facts
-          .filter((f): f is [string, string] => Boolean(f[1]))
+          .filter((x): x is [string, string] => Boolean(x[1]))
           .map(([label, value]) => (
             <div key={label}>
               <dt>{label}</dt>
@@ -103,9 +122,9 @@ function JobView({ job }: { job: JobDetails }) {
       </dl>
 
       {description ? (
-        <section className="description" dangerouslySetInnerHTML={{ __html: description }} />
+        <section className="description" lang="de" dangerouslySetInnerHTML={{ __html: description }} />
       ) : (
-        <p className="hint">This ad has no description here{job.externeURL ? '. Open the full ad above.' : '.'}</p>
+        <p className="hint">{job.externeURL ? t.job.noDescriptionExternal : t.job.noDescription}</p>
       )}
     </>
   );

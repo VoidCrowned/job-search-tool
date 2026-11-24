@@ -9,40 +9,41 @@ import {
   UMKREIS_CHOICES,
   VEROEFFENTLICHTSEIT_CHOICES,
   type Angebotsart,
-  type Arbeitszeit,
-  type Befristung,
   type SearchParams,
 } from '../api/params.ts';
 import type { JobSearchItem, SearchResponse } from '../api/types.ts';
-import { useJson } from './api.ts';
-import { formatDate, formatPay, formatPlace } from './format.ts';
+import { errorText, useJson } from './api.ts';
+import { formatDate, formatNumber, formatPay, formatPlace } from './format.ts';
+import { useT } from './i18n/index.tsx';
 import { rememberSearch } from './lastSearch.ts';
 import { navigate, onLinkClick } from './router.ts';
-
-const PUBLISHED_LABELS: Record<number, string> = { 0: 'Today', 1: 'Since yesterday', 7: 'Last 7 days', 14: 'Last 14 days', 28: 'Last 28 days' };
 
 function hasSearch(p: SearchParams) {
   return Boolean(p.was || p.wo || p.berufsfeld || p.arbeitgeber);
 }
 
 export function SearchPage({ search }: { search: string }) {
+  const t = useT();
   const { params } = parseSearchParams(new URLSearchParams(search));
   const query = toAppQuery(params).toString();
   const result = useJson<SearchResponse>(hasSearch(params) ? `/api/jobs?${query}` : null);
 
   useEffect(() => {
     rememberSearch(query ? `?${query}` : '');
-    document.title = params.was || params.wo ? `${[params.was, params.wo].filter(Boolean).join(' in ')} · Jobsuche` : 'Jobsuche';
-  }, [query, params.was, params.wo]);
+  }, [query]);
+
+  useEffect(() => {
+    document.title = t.app.pageTitle(t.search.queryTitle(params.was, params.wo));
+  }, [t, params.was, params.wo]);
 
   return (
     <>
       {/* Keyed on the URL so the form resets on back/forward navigation. */}
       <SearchForm key={search} initial={params} />
       <section aria-live="polite" className="results">
-        {result.state === 'idle' && <p className="hint">Enter a job title or a place to start.</p>}
-        {result.state === 'loading' && <p className="hint">Searching…</p>}
-        {result.state === 'error' && <p className="error">{result.error.message}</p>}
+        {result.state === 'idle' && <p className="hint">{t.search.idle}</p>}
+        {result.state === 'loading' && <p className="hint">{t.search.loading}</p>}
+        {result.state === 'error' && <p className="error">{errorText(result.error, t)}</p>}
         {result.state === 'done' && <Results data={result.data} params={params} />}
       </section>
     </>
@@ -50,6 +51,7 @@ export function SearchPage({ search }: { search: string }) {
 }
 
 function SearchForm({ initial }: { initial: SearchParams }) {
+  const t = useT();
   const [draft, setDraft] = useState<SearchParams>(initial);
   const set = (patch: Partial<SearchParams>) => setDraft((d) => ({ ...d, ...patch }));
 
@@ -63,96 +65,100 @@ function SearchForm({ initial }: { initial: SearchParams }) {
     navigate(`/?${toAppQuery({ ...draft, page: 1 })}`);
   }
 
+  const filtersActive = Boolean(
+    initial.angebotsart || initial.arbeitszeit || initial.befristung || initial.veroeffentlichtseit !== undefined || initial.zeitarbeit === false,
+  );
+
   return (
     <form className="search-form" onSubmit={submit} role="search">
       <div className="row main-row">
         <label>
-          What
+          {t.search.what}
           <input
             type="search"
             value={draft.was ?? ''}
             onChange={(e) => set({ was: e.target.value || undefined })}
-            placeholder="Job title, keyword"
+            placeholder={t.search.whatPlaceholder}
           />
         </label>
         <label>
-          Where
-          <input value={draft.wo ?? ''} onChange={(e) => set({ wo: e.target.value || undefined })} placeholder="Town or postcode" />
+          {t.search.where}
+          <input value={draft.wo ?? ''} onChange={(e) => set({ wo: e.target.value || undefined })} placeholder={t.search.wherePlaceholder} />
         </label>
         <label className="narrow">
-          Radius
+          {t.search.radius}
           <select
             value={draft.umkreis ?? ''}
             onChange={(e) => set({ umkreis: e.target.value === '' ? undefined : Number(e.target.value) })}
           >
-            <option value="">Default (25 km)</option>
+            <option value="">{t.search.radiusDefault}</option>
             {UMKREIS_CHOICES.map((km) => (
               <option key={km} value={km}>
-                {km === 0 ? 'Only this place' : `${km} km`}
+                {km === 0 ? t.search.radiusOnlyPlace : t.search.km(km)}
               </option>
             ))}
           </select>
         </label>
         <button type="submit" className="primary">
-          Search
+          {t.search.submit}
         </button>
       </div>
 
-      <details className="filters" open={Boolean(initial.angebotsart || initial.arbeitszeit || initial.befristung || initial.veroeffentlichtseit !== undefined || initial.zeitarbeit === false)}>
-        <summary>Filters</summary>
+      <details className="filters" open={filtersActive}>
+        <summary>{t.search.filters}</summary>
         <div className="row">
           <label>
-            Type
+            {t.search.type}
             <select
               value={draft.angebotsart ?? ''}
               onChange={(e) => set({ angebotsart: (e.target.value || undefined) as Angebotsart | undefined })}
             >
-              <option value="">Any</option>
-              {Object.entries(ANGEBOTSART).map(([value, label]) => (
+              <option value="">{t.search.any}</option>
+              {ANGEBOTSART.map((value) => (
                 <option key={value} value={value}>
-                  {label}
+                  {t.options.angebotsart[value]}
                 </option>
               ))}
             </select>
           </label>
           <label>
-            Published
+            {t.search.published}
             <select
               value={draft.veroeffentlichtseit ?? ''}
               onChange={(e) => set({ veroeffentlichtseit: e.target.value === '' ? undefined : Number(e.target.value) })}
             >
-              <option value="">Any time</option>
+              <option value="">{t.search.anyTime}</option>
               {VEROEFFENTLICHTSEIT_CHOICES.map((d) => (
                 <option key={d} value={d}>
-                  {PUBLISHED_LABELS[d]}
+                  {t.search.publishedWithin[d]}
                 </option>
               ))}
             </select>
           </label>
         </div>
         <fieldset>
-          <legend>Working time</legend>
-          {Object.entries(ARBEITSZEIT).map(([value, label]) => (
+          <legend>{t.search.workingTime}</legend>
+          {ARBEITSZEIT.map((value) => (
             <label key={value} className="check">
               <input
                 type="checkbox"
-                checked={draft.arbeitszeit?.includes(value as Arbeitszeit) ?? false}
-                onChange={() => set({ arbeitszeit: toggle(draft.arbeitszeit, value as Arbeitszeit) })}
+                checked={draft.arbeitszeit?.includes(value) ?? false}
+                onChange={() => set({ arbeitszeit: toggle(draft.arbeitszeit, value) })}
               />
-              {label}
+              {t.options.arbeitszeit[value]}
             </label>
           ))}
         </fieldset>
         <fieldset>
-          <legend>Contract</legend>
-          {Object.entries(BEFRISTUNG).map(([value, label]) => (
+          <legend>{t.search.contract}</legend>
+          {BEFRISTUNG.map((value) => (
             <label key={value} className="check">
               <input
                 type="checkbox"
-                checked={draft.befristung?.includes(value as Befristung) ?? false}
-                onChange={() => set({ befristung: toggle(draft.befristung, value as Befristung) })}
+                checked={draft.befristung?.includes(value) ?? false}
+                onChange={() => set({ befristung: toggle(draft.befristung, value) })}
               />
-              {label}
+              {t.options.befristung[value]}
             </label>
           ))}
         </fieldset>
@@ -162,7 +168,7 @@ function SearchForm({ initial }: { initial: SearchParams }) {
             checked={draft.zeitarbeit !== false}
             onChange={(e) => set({ zeitarbeit: e.target.checked ? undefined : false })}
           />
-          Include temporary agency jobs
+          {t.search.includeTempAgencies}
         </label>
       </details>
     </form>
@@ -170,56 +176,51 @@ function SearchForm({ initial }: { initial: SearchParams }) {
 }
 
 function Results({ data, params }: { data: SearchResponse; params: SearchParams }) {
+  const t = useT();
   const items = data.ergebnisliste ?? [];
   if (data.maxErgebnisse === 0 || items.length === 0) {
-    return <p className="hint">No jobs found. Try a wider radius or fewer filters.</p>;
+    return <p className="hint">{t.search.noResults}</p>;
   }
   const lastPage = Math.max(1, Math.min(Math.ceil(data.maxErgebnisse / params.size), Math.floor(MAX_RESULT_WINDOW / params.size)));
   const pageHref = (page: number) => `/?${toAppQuery({ ...params, page })}`;
   const from = (params.page - 1) * params.size + 1;
 
-  const pager = (
-    <nav className="pager" aria-label="Pages">
-      {params.page > 1 ? (
-        <a href={pageHref(params.page - 1)} onClick={onLinkClick}>
-          ← Previous
-        </a>
-      ) : (
-        <span />
-      )}
-      <span>
-        Page {params.page} of {lastPage.toLocaleString('en-GB')}
-      </span>
-      {params.page < lastPage ? (
-        <a href={pageHref(params.page + 1)} onClick={onLinkClick}>
-          Next →
-        </a>
-      ) : (
-        <span />
-      )}
-    </nav>
-  );
-
   return (
     <>
       <p className="count">
-        {data.maxErgebnisse.toLocaleString('en-GB')} jobs
-        {data.woOutput?.bereinigterOrt ? ` near ${data.woOutput.bereinigterOrt}` : ''} · showing {from}–{from + items.length - 1}
+        {t.search.count(formatNumber(data.maxErgebnisse, t), data.woOutput?.bereinigterOrt, from, from + items.length - 1)}
       </p>
       <ol className="job-list">
         {items.map((job) => (
           <JobCard key={job.referenznummer} job={job} />
         ))}
       </ol>
-      {pager}
+      <nav className="pager" aria-label={t.search.pages}>
+        {params.page > 1 ? (
+          <a href={pageHref(params.page - 1)} onClick={onLinkClick}>
+            {t.search.previous}
+          </a>
+        ) : (
+          <span />
+        )}
+        <span>{t.search.pageOf(formatNumber(params.page, t), formatNumber(lastPage, t))}</span>
+        {params.page < lastPage ? (
+          <a href={pageHref(params.page + 1)} onClick={onLinkClick}>
+            {t.search.next}
+          </a>
+        ) : (
+          <span />
+        )}
+      </nav>
     </>
   );
 }
 
 function JobCard({ job }: { job: JobSearchItem }) {
-  const place = formatPlace(job);
-  const pay = formatPay(job);
-  const published = formatDate(job.veroeffentlichungszeitraum?.von ?? job.datumErsteVeroeffentlichung);
+  const t = useT();
+  const place = formatPlace(job, t);
+  const pay = formatPay(job, t);
+  const published = formatDate(job.veroeffentlichungszeitraum?.von ?? job.datumErsteVeroeffentlichung, t);
   return (
     <li className="job-card">
       <a className="job-title" href={`/job/${encodeURIComponent(job.referenznummer)}`} onClick={onLinkClick}>
@@ -230,15 +231,15 @@ function JobCard({ job }: { job: JobSearchItem }) {
         {place && (
           <span>
             {place}
-            {job.entfernung ? ` · ${job.entfernung} km` : ''}
+            {job.entfernung ? ` · ${t.search.km(job.entfernung)}` : ''}
           </span>
         )}
-        {published && <span>Published {published}</span>}
+        {published && <span>{t.card.publishedOn(published)}</span>}
       </div>
       <div className="badges">
-        {job.homeofficemoeglich && <span className="badge">Home office</span>}
+        {job.homeofficemoeglich && <span className="badge">{t.card.homeOffice}</span>}
         {pay && <span className="badge">{pay}</span>}
-        {job.externeURL && <span className="badge muted">External ad</span>}
+        {job.externeURL && <span className="badge muted">{t.card.externalAd}</span>}
       </div>
     </li>
   );

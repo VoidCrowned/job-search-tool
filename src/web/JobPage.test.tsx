@@ -15,6 +15,7 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   sessionStorage.clear();
+  localStorage.clear();
 });
 
 describe('renderMarkdown', () => {

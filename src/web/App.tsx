@@ -1,8 +1,10 @@
+import { I18nProvider, LanguageSelect, useT } from './i18n/index.tsx';
 import { JobPage } from './JobPage.tsx';
 import { SearchPage } from './SearchPage.tsx';
 import { onLinkClick, useLocation } from './router.ts';
 
-function route(pathname: string, search: string) {
+function Route({ pathname, search }: { pathname: string; search: string }) {
+  const t = useT();
   if (pathname === '/') return <SearchPage search={search} />;
   const job = /^\/job\/([^/]+)$/.exec(pathname);
   if (job) {
@@ -11,25 +13,42 @@ function route(pathname: string, search: string) {
   }
   return (
     <p className="error">
-      Page not found. <a href="/" onClick={onLinkClick}>Back to search</a>
+      {t.app.notFound}{' '}
+      <a href="/" onClick={onLinkClick}>
+        {t.app.backToSearch}
+      </a>
     </p>
   );
 }
 
-export function App() {
+function Shell() {
+  const t = useT();
   const location = useLocation();
 
   return (
     <div className="page">
       <header className="site-header">
         <a href="/" onClick={onLinkClick} className="brand">
-          Jobsuche
+          {t.app.brand}
         </a>
+        <div className="header-controls">
+          <LanguageSelect />
+        </div>
       </header>
-      <main>{route(location.pathname, location.search)}</main>
+      <main>
+        <Route pathname={location.pathname} search={location.search} />
+      </main>
       <footer className="site-footer">
-        Data: <a href="https://www.arbeitsagentur.de/jobsuche/">Bundesagentur für Arbeit</a>
+        {t.app.dataSource} <a href="https://www.arbeitsagentur.de/jobsuche/">Bundesagentur für Arbeit</a>
       </footer>
     </div>
+  );
+}
+
+export function App() {
+  return (
+    <I18nProvider>
+      <Shell />
+    </I18nProvider>
   );
 }
