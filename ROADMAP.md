@@ -2,7 +2,7 @@
 
 ## M1: Understand the API
 - [x] Project scaffold (#1)
-- [ ] API client and documentation (#2)
+- [x] API client and documentation (#2)
 
 ## M2: Search website
 - [ ] Local API proxy (#3)
