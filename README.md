@@ -15,7 +15,7 @@ Then open http://localhost:5173.
 
 ## Application letters
 
-1. Fill in **Profile** (top right): your details and your CV as plain text.
+1. Fill in **Profile** (top right): your details and your CV as plain text. **Load example profile** fills in a made-up person to try it out.
 2. Open a job and use **Write application**.
 
 Without an API key, you get a template filled from your profile. With a key, Claude writes the letter:

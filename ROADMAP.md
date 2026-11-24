@@ -21,7 +21,7 @@
 - [x] Application text template fallback (#8)
 - [x] Letter history per job (#37)
 - [x] ATS-ready letters (#38)
-- [ ] Showcase mock data (#9)
+- [x] Showcase mock data (#9)
 
 ## Later
 - [ ] Hosting without exposing keys (#10)

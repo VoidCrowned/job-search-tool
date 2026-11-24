@@ -45,6 +45,10 @@ export const en = {
     saved: 'Saved.',
     unsaved: 'Unsaved changes',
     loading: 'Loading profile…',
+    loadExample: 'Load example profile',
+    exampleHint: 'Fills the form with a made-up person (Alex Beispiel) so you can try everything without your own data. Nothing is saved until you press Save.',
+    replaceConfirm: 'Replace what is in the form with the example profile?',
+    exampleLoaded: 'Example loaded. Press Save to use it.',
   },
 
   letter: {

@@ -2,7 +2,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { App } from './App.tsx';
-import { emptyProfile } from '../shared/profile.ts';
+import { emptyProfile, parseProfile } from '../shared/profile.ts';
+import exampleProfile from '../../examples/profile.example.json';
 
 let stored = { ...emptyProfile(), name: 'Void', cv: 'Old CV' };
 let fetchMock: ReturnType<typeof vi.fn>;
@@ -57,5 +58,43 @@ describe('profile page', () => {
     fireEvent.click(screen.getByText('Profile'));
     expect(window.location.pathname).toBe('/profile');
     expect(await screen.findByLabelText('Full name')).toBeTruthy();
+  });
+
+  it('the example profile is valid and complete', () => {
+    const { profile, errors } = parseProfile(exampleProfile);
+    expect(errors).toEqual([]);
+    expect(Object.values(profile).every((v) => v.trim() !== '')).toBe(true);
+    expect(profile.email).toMatch(/@example\.org$/);
+  });
+
+  it('loads the example after confirming, without saving', async () => {
+    const confirm = vi.fn(() => true);
+    vi.stubGlobal('confirm', confirm);
+    render(<App />);
+    await screen.findByLabelText('Full name');
+    fireEvent.click(screen.getByText('Load example profile'));
+    expect(confirm).toHaveBeenCalled(); // the form already had "Void" in it
+    expect((screen.getByLabelText('Full name') as HTMLInputElement).value).toBe('Alex Beispiel');
+    expect(screen.getByText(/Example loaded/)).toBeTruthy();
+    expect(fetchMock.mock.calls.some(([, init]) => (init as RequestInit | undefined)?.method === 'PUT')).toBe(false);
+  });
+
+  it('keeps the form when the replace question is declined', async () => {
+    vi.stubGlobal('confirm', vi.fn(() => false));
+    render(<App />);
+    await screen.findByLabelText('Full name');
+    fireEvent.click(screen.getByText('Load example profile'));
+    expect((screen.getByLabelText('Full name') as HTMLInputElement).value).toBe('Void');
+  });
+
+  it('does not ask when the form is empty', async () => {
+    stored = emptyProfile();
+    const confirm = vi.fn(() => true);
+    vi.stubGlobal('confirm', confirm);
+    render(<App />);
+    await screen.findByLabelText('Full name');
+    fireEvent.click(screen.getByText('Load example profile'));
+    expect(confirm).not.toHaveBeenCalled();
+    expect((screen.getByLabelText('Town') as HTMLInputElement).value).toBe('Hamburg');
   });
 });

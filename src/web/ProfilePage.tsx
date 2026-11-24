@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { MAX_LENGTH, MULTILINE_FIELDS, type Profile, type ProfileField } from '../shared/profile.ts';
+import exampleProfile from '../../examples/profile.example.json';
+import { isProfileEmpty, MAX_LENGTH, MULTILINE_FIELDS, parseProfile, type Profile, type ProfileField } from '../shared/profile.ts';
 import { errorText, RequestError, sendJson, useJson } from './api.ts';
 import { useT } from './i18n/index.tsx';
 
@@ -28,7 +29,7 @@ export function ProfilePage() {
   );
 }
 
-type Status = { kind: 'idle' } | { kind: 'saving' } | { kind: 'saved' } | { kind: 'error'; error: RequestError };
+type Status = { kind: 'idle' } | { kind: 'saving' } | { kind: 'saved' } | { kind: 'example' } | { kind: 'error'; error: RequestError };
 
 function ProfileForm({ initial }: { initial: Profile }) {
   const t = useT();
@@ -36,6 +37,12 @@ function ProfileForm({ initial }: { initial: Profile }) {
   const [saved, setSaved] = useState(initial);
   const [status, setStatus] = useState<Status>({ kind: 'idle' });
   const dirty = JSON.stringify(profile) !== JSON.stringify(saved);
+
+  function loadExample() {
+    if (!isProfileEmpty(profile) && !window.confirm(t.profile.replaceConfirm)) return;
+    setProfile(parseProfile(exampleProfile).profile);
+    setStatus({ kind: 'example' });
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -52,6 +59,12 @@ function ProfileForm({ initial }: { initial: Profile }) {
 
   return (
     <form className="profile-form" onSubmit={submit}>
+      <div className="example-row">
+        <button type="button" className="button" onClick={loadExample}>
+          {t.profile.loadExample}
+        </button>
+        <small className="hint">{t.profile.exampleHint}</small>
+      </div>
       {SECTIONS.map((section) => (
         <fieldset key={section.key} className="profile-section">
           <legend>{t.profile.sections[section.key]}</legend>
@@ -88,7 +101,15 @@ function ProfileForm({ initial }: { initial: Profile }) {
           {status.kind === 'saving' ? t.profile.saving : t.profile.save}
         </button>
         <span aria-live="polite" className={status.kind === 'error' ? 'error' : 'hint'}>
-          {status.kind === 'error' ? errorText(status.error, t) : dirty ? t.profile.unsaved : status.kind === 'saved' ? t.profile.saved : ''}
+          {status.kind === 'error'
+            ? errorText(status.error, t)
+            : status.kind === 'example'
+              ? t.profile.exampleLoaded
+              : dirty
+                ? t.profile.unsaved
+                : status.kind === 'saved'
+                  ? t.profile.saved
+                  : ''}
         </span>
       </div>
     </form>

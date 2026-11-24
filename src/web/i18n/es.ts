@@ -43,6 +43,10 @@ export const es: Messages = {
     saved: 'Guardado.',
     unsaved: 'Cambios sin guardar',
     loading: 'Cargando perfil…',
+    loadExample: 'Cargar perfil de ejemplo',
+    exampleHint: 'Rellena el formulario con una persona inventada (Alex Beispiel) para que puedas probarlo todo sin tus datos. No se guarda nada hasta que pulses Guardar.',
+    replaceConfirm: '¿Sustituir el contenido del formulario por el perfil de ejemplo?',
+    exampleLoaded: 'Ejemplo cargado. Pulsa Guardar para usarlo.',
   },
 
   letter: {
