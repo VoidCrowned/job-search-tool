@@ -18,6 +18,8 @@ export function navigate(to: string) {
   if (to === snapshot()) return;
   window.history.pushState(null, '', to);
   window.dispatchEvent(new PopStateEvent('popstate'));
+  // A new page starts at the top, like a normal page load. (Browser back/forward keep their own behaviour.)
+  window.scrollTo(0, 0);
 }
 
 /** Click handler for internal links: lets ctrl/middle-click open new tabs as usual. */
