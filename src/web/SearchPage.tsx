@@ -17,6 +17,7 @@ import { formatDate, formatNumber, formatPay, formatPlace } from './format.ts';
 import { useT } from './i18n/index.tsx';
 import { JobDetailsView } from './JobDetailsView.tsx';
 import { useJobDetails } from './jobDetails.ts';
+import { PageTools } from './PageTools.tsx';
 import { rememberSearch } from './lastSearch.ts';
 import { navigate, onLinkClick } from './router.ts';
 
@@ -228,6 +229,7 @@ function Results({ data, params }: { data: SearchResponse; params: SearchParams 
           <span />
         )}
       </nav>
+      <PageTools expandedCount={expanded.size} onCollapseAll={() => setExpanded(new Set())} />
     </>
   );
 }

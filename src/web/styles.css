@@ -148,3 +148,17 @@ label.check { display: inline-flex; gap: 0.4rem; align-items: center; font-size:
 .logo.small { width: 44px; height: 44px; }
 .job-body-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 0.75rem; }
 .link-button { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; text-decoration: underline; }
+
+/* Floating page tools */
+.page-tools { position: fixed; right: 1.25rem; bottom: 1.25rem; display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; z-index: 10; }
+.page-tools button {
+  font: inherit;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.15);
+  cursor: pointer;
+}
+.page-tools button:hover { border-color: var(--accent); }

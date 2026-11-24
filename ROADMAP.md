@@ -13,7 +13,7 @@
 - [x] Display languages: English, German, Spanish (#19)
 - [x] Dark and light mode (#20)
 - [x] Expand jobs inside the result list (#21)
-- [ ] Back to top and collapse all (#22)
+- [x] Back to top and collapse all (#22)
 
 ## M3: Application texts
 - [ ] Local profile (#6)

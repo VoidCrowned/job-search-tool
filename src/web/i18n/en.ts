@@ -61,6 +61,11 @@ export const en = {
     collapse: 'Collapse',
   },
 
+  tools: {
+    backToTop: '↑ Back to top',
+    collapseAll: (n: number) => `Collapse all (${n})`,
+  },
+
   options: {
     angebotsart: { '1': 'Job', '2': 'Self-employment', '4': 'Apprenticeship / dual study', '34': 'Internship / trainee' },
     arbeitszeit: { vz: 'Full-time', tz: 'Part-time', snw: 'Shifts / nights / weekends', mj: 'Mini-job' },

@@ -58,6 +58,11 @@ export const es: Messages = {
     collapse: 'Contraer',
   },
 
+  tools: {
+    backToTop: '↑ Volver arriba',
+    collapseAll: (n) => `Contraer todo (${n})`,
+  },
+
   options: {
     angebotsart: { '1': 'Empleo', '2': 'Trabajo autónomo', '4': 'Formación profesional / estudios duales', '34': 'Prácticas / trainee' },
     arbeitszeit: { vz: 'Jornada completa', tz: 'Media jornada', snw: 'Turnos / noches / fines de semana', mj: 'Minijob' },
