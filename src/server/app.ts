@@ -11,6 +11,7 @@ import { fillTemplate } from './letter/template.ts';
 import Anthropic from '@anthropic-ai/sdk';
 import { aiConfigFromEnv, createClaudeGenerator, RefusalError, type LetterGenerator } from './letter/claude.ts';
 import { createStorage, type Storage } from './storage.ts';
+import { updateEnvFile } from './envFile.ts';
 
 export interface AppOptions {
   client?: JobsucheClient;
@@ -22,7 +23,25 @@ export interface AppOptions {
   /** Shown in /api/config. */
   model?: string;
   provider?: 'anthropic' | 'openrouter';
+  /** Environment the API key is read from and written to. Default: process.env. */
+  env?: NodeJS.ProcessEnv;
+  /** The .env file a key entered on the profile page is saved in. Default: .env */
+  envPath?: string;
 }
+
+const KEY_VARS = ['ANTHROPIC_API_KEY', 'OPENROUTER_API_KEY'] as const;
+/** OpenRouter ("sk-or-…") or Anthropic ("sk-ant-…") keys; one line, no spaces or quotes. */
+const API_KEY = /^sk-(or|ant)-[A-Za-z0-9_-]{16,250}$/;
+/** Enough of the key to recognise it, never enough to use it. */
+const keyHint = (key: string) => `${key.slice(0, key.startsWith('sk-ant-') ? 7 : 6)}…${key.slice(-4)}`;
+/** Origins of pages allowed to change things: the app itself (dev server or built site), never another website. */
+const isLocalOrigin = (origin: string) => {
+  try {
+    return LOCAL_HOSTS.has(new URL(origin).hostname);
+  } catch {
+    return false;
+  }
+};
 
 /** Host names the API answers to. Anything else (e.g. a DNS-rebinding attack from a website) is refused. */
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]', '::1']);
@@ -39,16 +58,41 @@ export function createApp(options: AppOptions = {}) {
   const client = options.client ?? createJobsucheClient();
   const doFetch = options.fetch ?? globalThis.fetch;
   const storage = options.storage ?? createStorage();
-  const aiConfig = aiConfigFromEnv();
-  const generator =
-    options.generator !== undefined ? options.generator : aiConfig.apiKey ? createClaudeGenerator(aiConfig) : null;
-  const model = options.model ?? aiConfig.model;
-  const provider = options.provider ?? aiConfig.provider ?? 'anthropic';
+  const env = options.env ?? process.env;
+  const envPath = options.envPath ?? '.env';
+
+  // The AI setup can change at runtime when a key is entered on the profile page.
+  const aiFromEnv = () => {
+    const config = aiConfigFromEnv(env);
+    return {
+      generator: config.apiKey ? createClaudeGenerator(config) : null,
+      model: config.model,
+      provider: config.provider ?? 'anthropic',
+      key: config.apiKey,
+    };
+  };
+  let ai = aiFromEnv();
+  if (options.generator !== undefined) ai = { ...ai, generator: options.generator };
+  if (options.model) ai.model = options.model;
+  if (options.provider) ai.provider = options.provider;
   const app = new Hono();
 
   // Personal data is served here, so only answer requests addressed to this machine.
   app.use('/api/*', async (c, next) => {
     if (!LOCAL_HOSTS.has(new URL(c.req.url).hostname)) return c.json({ error: 'Forbidden host.' }, 403);
+    await next();
+  });
+
+  // Requests that change something must come from the app itself: a JSON body (other websites can't send one
+  // without a CORS preflight, which this server never answers) and, if the browser names it, a local Origin.
+  app.use('/api/*', async (c, next) => {
+    if (c.req.method !== 'GET' && c.req.method !== 'HEAD') {
+      const origin = c.req.header('Origin');
+      if (origin && !isLocalOrigin(origin)) return c.json({ error: 'Forbidden origin.' }, 403);
+      if (c.req.method !== 'DELETE' && !c.req.header('Content-Type')?.startsWith('application/json')) {
+        return c.json({ error: 'Expected JSON.' }, 415);
+      }
+    }
     await next();
   });
 
@@ -75,7 +119,36 @@ export function createApp(options: AppOptions = {}) {
 
   app.get('/api/health', (c) => c.json({ ok: true }));
 
-  app.get('/api/config', (c) => c.json(generator ? { ai: true, model, provider } : { ai: false }));
+  app.get('/api/config', (c) => c.json(ai.generator ? { ai: true, model: ai.model, provider: ai.provider } : { ai: false }));
+
+  // The API key itself never leaves the server: only whether one is set, the provider and a short hint.
+  const keyStatus = () => (ai.key ? { set: true, provider: ai.provider, hint: keyHint(ai.key) } : { set: false });
+
+  const setKey = async (key: string | undefined) => {
+    const changes: Record<string, string | undefined> = { ANTHROPIC_API_KEY: undefined, OPENROUTER_API_KEY: undefined };
+    if (key) changes[key.startsWith('sk-or-') ? 'OPENROUTER_API_KEY' : 'ANTHROPIC_API_KEY'] = key;
+    await updateEnvFile(envPath, changes);
+    for (const name of KEY_VARS) {
+      if (changes[name] === undefined) delete env[name];
+      else env[name] = changes[name];
+    }
+    ai = aiFromEnv();
+  };
+
+  app.get('/api/settings/key', (c) => c.json(keyStatus()));
+
+  app.put('/api/settings/key', async (c) => {
+    const body = (await c.req.json().catch(() => ({}))) as { key?: unknown };
+    const key = typeof body.key === 'string' ? body.key.trim() : '';
+    if (!API_KEY.test(key)) return c.json({ error: 'That does not look like an OpenRouter (sk-or-…) or Anthropic (sk-ant-…) key.', code: 'INVALID_KEY' }, 400);
+    await setKey(key);
+    return c.json(keyStatus());
+  });
+
+  app.delete('/api/settings/key', async (c) => {
+    await setKey(undefined);
+    return c.json(keyStatus());
+  });
 
   const lettersFor = async (refnr: string, job?: JobDetails): Promise<LetterFile> => {
     const file = (await storage.readLetters(refnr)) ?? { refnr, jobTitle: '', versions: [] };
@@ -107,6 +180,7 @@ export function createApp(options: AppOptions = {}) {
     if (confirmed === null) return c.json({ error: 'Invalid confirmed points.' }, 400);
     const choice = body.language ?? 'auto';
     if (!isLanguageChoice(choice)) return c.json({ error: 'Invalid language.' }, 400);
+    const { generator } = ai;
     const mode = body.mode ?? (generator ? 'ai' : 'template');
     if (mode !== 'ai' && mode !== 'template') return c.json({ error: 'Invalid mode.' }, 400);
     if (mode === 'ai' && !generator) return c.json({ error: 'No Anthropic API key is set.', code: 'AI_UNAVAILABLE' }, 400);

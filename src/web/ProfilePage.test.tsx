@@ -97,4 +97,38 @@ describe('profile page', () => {
     expect(confirm).not.toHaveBeenCalled();
     expect((screen.getByLabelText('Town') as HTMLInputElement).value).toBe('Hamburg');
   });
+
+  it('saves and removes the API key without ever showing it', async () => {
+    let keyStatus: Record<string, unknown> = { set: false };
+    const keyCalls: { method: string; body?: string }[] = [];
+    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (url === '/api/settings/key') {
+        const method = init?.method ?? 'GET';
+        if (method !== 'GET') keyCalls.push({ method, body: init?.body as string | undefined });
+        if (method === 'PUT') keyStatus = { set: true, provider: 'openrouter', hint: 'sk-or-…WXYZ' };
+        if (method === 'DELETE') keyStatus = { set: false };
+        return new Response(JSON.stringify(keyStatus), { headers: { 'Content-Type': 'application/json' } });
+      }
+      return new Response(JSON.stringify(stored), { headers: { 'Content-Type': 'application/json' } });
+    });
+    vi.stubGlobal('confirm', () => true);
+    render(<App />);
+    expect(await screen.findByText(/No key set/)).toBeTruthy();
+    const input = screen.getByLabelText('API key') as HTMLInputElement;
+    expect(input.type).toBe('password');
+    const save = screen.getByText('Save key') as HTMLButtonElement;
+    expect(save.disabled).toBe(true);
+    fireEvent.change(input, { target: { value: 'sk-or-v1-secret0123456789WXYZ' } });
+    fireEvent.click(save);
+    expect(await screen.findByText('Key set: OpenRouter (sk-or-…WXYZ).')).toBeTruthy();
+    expect(screen.getByText(/Key saved/)).toBeTruthy();
+    expect((screen.getByLabelText('Replace with a new key') as HTMLInputElement).value).toBe('');
+    expect(document.body.textContent).not.toContain('secret0123456789');
+    fireEvent.click(screen.getByText('Remove key'));
+    expect(await screen.findByText('Key removed.')).toBeTruthy();
+    expect(keyCalls).toEqual([
+      { method: 'PUT', body: JSON.stringify({ key: 'sk-or-v1-secret0123456789WXYZ' }) },
+      { method: 'DELETE', body: undefined },
+    ]);
+  });
 });

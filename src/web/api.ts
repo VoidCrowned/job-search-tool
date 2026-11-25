@@ -28,6 +28,8 @@ export function errorText(err: RequestError, t: Messages): string {
       return t.errors.aiFailed;
     case 'AI_UNAVAILABLE':
       return t.errors.aiUnavailable;
+    case 'INVALID_KEY':
+      return t.errors.invalidKey;
   }
   if (err.status === 404) return t.errors.notFound;
   if (err.status === 400) return t.errors.invalid;
@@ -42,6 +44,10 @@ export async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> 
 /** PUT/POST a JSON body and read the JSON answer. */
 export async function sendJson<T>(method: 'PUT' | 'POST', url: string, body: unknown): Promise<T> {
   return requestJson<T>(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+}
+
+export async function deleteJson<T>(url: string): Promise<T> {
+  return requestJson<T>(url, { method: 'DELETE' });
 }
 
 async function requestJson<T>(url: string, init: RequestInit): Promise<T> {

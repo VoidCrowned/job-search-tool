@@ -57,7 +57,8 @@ describe('profile API', () => {
   });
 
   it('refuses a body that is not JSON', async () => {
-    const res = await app().request('/api/profile', { method: 'PUT', body: 'not json' });
+    expect((await app().request('/api/profile', { method: 'PUT', body: 'not json' })).status).toBe(415);
+    const res = await app().request('/api/profile', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: 'not json' });
     expect(res.status).toBe(400);
   });
 
