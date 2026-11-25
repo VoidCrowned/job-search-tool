@@ -252,6 +252,7 @@ export const en = {
     aiAuth: 'The API key was rejected. Enter a valid key on your profile page.',
     aiRateLimit: 'Too many requests to Claude right now. Try again in a minute.',
     aiFailed: 'Claude could not write the letter. Try again, or fill the template.',
+    aiConnection: 'Could not reach OpenRouter or Anthropic. Check your internet connection and try again. If it keeps happening, please report it.',
     aiUnavailable: 'No Anthropic API key is set.',
     serverDown: 'The local server is not reachable. Is `npm run dev` running?',
     notFound: 'This job ad no longer exists.',

@@ -16,6 +16,10 @@ export function describeError(err: unknown): ErrorInfo {
   if (err instanceof Anthropic.AuthenticationError || err instanceof Anthropic.PermissionDeniedError) {
     return { status: 502, code: 'AI_AUTH', message: 'The API key was rejected.' };
   }
+  // No answer at all: offline, or (online version) the browser blocked the request.
+  if (err instanceof Anthropic.APIConnectionError) {
+    return { status: 502, code: 'AI_CONNECTION', message: 'Claude could not be reached.' };
+  }
   if (err instanceof Anthropic.RateLimitError) return { status: 503, code: 'AI_RATE_LIMIT', message: 'Anthropic rate limit reached.' };
   if (err instanceof Anthropic.APIError) return { status: 502, code: 'AI_ERROR', message: 'Claude could not write the letter.' };
   if (err instanceof JobsucheError) {

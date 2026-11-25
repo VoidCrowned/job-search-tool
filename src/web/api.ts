@@ -26,6 +26,8 @@ export function errorText(err: RequestError, t: Messages): string {
       return t.errors.aiRateLimit;
     case 'AI_ERROR':
       return t.errors.aiFailed;
+    case 'AI_CONNECTION':
+      return t.errors.aiConnection;
     case 'AI_UNAVAILABLE':
       return t.errors.aiUnavailable;
     case 'INVALID_KEY':

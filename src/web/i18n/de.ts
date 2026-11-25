@@ -249,6 +249,7 @@ export const de: Messages = {
     aiAuth: 'Der API-Schlüssel wurde abgelehnt. Trage auf deiner Profilseite einen gültigen Schlüssel ein.',
     aiRateLimit: 'Gerade zu viele Anfragen an Claude. Versuch es in einer Minute noch einmal.',
     aiFailed: 'Claude konnte das Anschreiben nicht verfassen. Versuch es noch einmal oder fülle die Vorlage aus.',
+    aiConnection: 'OpenRouter bzw. Anthropic war nicht erreichbar. Prüfe deine Internetverbindung und versuche es erneut. Falls es weiter passiert, melde es bitte.',
     aiUnavailable: 'Es ist kein Anthropic-API-Schlüssel eingetragen.',
     serverDown: 'Der lokale Server ist nicht erreichbar. Läuft `npm run dev`?',
     notFound: 'Diese Stellenanzeige gibt es nicht mehr.',
