@@ -31,6 +31,7 @@ Each letter costs about 8 cents with the default model (Claude Opus 5.5). `npm r
 
 - `npm test`: unit tests
 - `npm run api:check`: live check against the Jobsuche API (prints JSON)
+- `npm run relay:dev` and `npm run relay:check -- <relay URL>`: run the job-search relay for the online version locally, and check a relay live (prints JSON)
 - `npm run lint`, `npm run build`
 
 ## Private data
