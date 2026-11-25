@@ -4,6 +4,8 @@
 export interface KeyValueStore {
   get<T>(key: string): Promise<T | undefined>;
   set(key: string, value: unknown): Promise<void>;
+  /** All keys starting with `prefix`. */
+  keys(prefix: string): Promise<string[]>;
 }
 
 export function memoryStore(): KeyValueStore & { data: Map<string, unknown> } {
@@ -16,6 +18,9 @@ export function memoryStore(): KeyValueStore & { data: Map<string, unknown> } {
     },
     async set(key, value) {
       data.set(key, structuredClone(value));
+    },
+    async keys(prefix) {
+      return [...data.keys()].filter((k) => k.startsWith(prefix));
     },
   };
 }
@@ -48,6 +53,10 @@ export function indexedDbStore(): KeyValueStore {
     },
     async set(key, value) {
       await request((await store('readwrite')).put(value, key));
+    },
+    async keys(prefix) {
+      const all = await request((await store('readonly')).getAllKeys());
+      return all.filter((k): k is string => typeof k === 'string' && k.startsWith(prefix));
     },
   };
 }

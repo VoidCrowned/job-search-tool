@@ -146,3 +146,21 @@ describe('letters API with Claude', () => {
     expect((await createStorage(dir).readLetters(ref))?.versions ?? []).toEqual([]);
   });
 });
+
+describe('backup API', () => {
+  it('exports profile and letters without any key, and imports by merging', async () => {
+    await post(`/api/letters/${ref}/versions`, { text: 'Mine', language: 'de' });
+    const exported = (await (await app().request('/api/backup')).json()) as { letters: { versions: unknown[] }[]; apiKey?: string; profile: { name: string } };
+    expect(exported).toMatchObject({ app: 'job-search-tool', version: 1, profile: { name: 'Void Example' } });
+    expect(exported.letters).toHaveLength(1);
+    expect(exported.apiKey).toBeUndefined();
+
+    const other = { ...exported, profile: { ...exported.profile, name: 'Imported' }, letters: [{ refnr: ref, jobTitle: 'x', versions: [{ id: 'imp-1', createdAt: '2026-01-01T00:00:00Z', source: 'edit', language: 'de', text: 'Old one' }] }] };
+    const res = await post('/api/backup', other);
+    expect(await res.json()).toEqual({ letters: 1 });
+    expect((await (await app().request('/api/profile')).json()).name).toBe('Imported');
+    const file = (await (await app().request(`/api/letters/${ref}`)).json()) as { versions: { text: string }[] };
+    expect(file.versions.map((x) => x.text)).toEqual(['Old one', 'Mine']);
+    expect((await post('/api/backup', { app: 'other' })).status).toBe(400);
+  });
+});

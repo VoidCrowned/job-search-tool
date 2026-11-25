@@ -5,6 +5,7 @@ import { createJobsucheClient, logoUrl, UPSTREAM_HOST } from '../../api/client.t
 import { parseSearchParams } from '../../api/params.ts';
 import { isValidApiKey, keyHint } from '../../shared/apiKey.ts';
 import { describeError } from '../../shared/errors.ts';
+import { makeBackup, mergeLetterFiles, parseBackup } from '../../shared/backup.ts';
 import { isLanguageChoice, MAX_LETTER_LENGTH, parseConfirmed, type LetterFile } from '../../shared/letter.ts';
 import { aiConfigFromEnv, createClaudeGenerator, type AiConfig as ClaudeConfig, type LetterGenerator } from '../../shared/letter/claude.ts';
 import { addVersion, letterFileFor, writeLetter, type NewVersion } from '../../shared/letter/service.ts';
@@ -122,6 +123,23 @@ export function createBrowserBackend(options: BrowserBackendOptions): Backend {
           throw new RequestError(400, 'Invalid letter text.');
         }
         return saveNew(letterFileFor(refnr, await readLetters(refnr)), { source: 'edit', language, text });
+      }),
+
+    exportData: (includeKey) =>
+      guard(async () => {
+        const keys = await store.keys('letters:');
+        const files = (await Promise.all(keys.map((k) => store.get<LetterFile>(k)))).filter((f): f is LetterFile => Boolean(f));
+        return makeBackup(await readProfile(), files, includeKey ? (keyStorage.get() ?? undefined) : undefined);
+      }),
+    importData: (input) =>
+      guard(async () => {
+        const { backup, error } = parseBackup(input);
+        if (!backup) throw new RequestError(400, error ?? 'Invalid backup.', 'INVALID_BACKUP');
+        await store.set(PROFILE, backup.profile);
+        for (const imported of backup.letters) {
+          await store.set(lettersKey(imported.refnr), mergeLetterFiles(await readLetters(imported.refnr), imported));
+        }
+        return { letters: backup.letters.length };
       }),
 
     aiConfig: async () => {

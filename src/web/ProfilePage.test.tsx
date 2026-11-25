@@ -176,4 +176,42 @@ describe('profile page', () => {
     const save = screen.getByText('Save profile');
     expect(save.compareDocumentPosition(screen.getByLabelText('CV as text')) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
   });
+
+  it('exports a backup file and imports one, reloading the form', async () => {
+    const backup = { app: 'job-search-tool', version: 1, exportedAt: '2026-11-25T12:00:00Z', profile: { ...emptyProfile(), name: 'Imported Person' }, letters: [] };
+    const posted: unknown[] = [];
+    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+      const json = (body: unknown) => new Response(JSON.stringify(body), { headers: { 'Content-Type': 'application/json' } });
+      if (url === '/api/backup' && init?.method === 'POST') {
+        posted.push(JSON.parse(init.body as string));
+        stored = backup.profile;
+        return json({ letters: 0 });
+      }
+      if (url === '/api/backup') return json({ ...backup, profile: stored, letters: [{ refnr: 'x123', jobTitle: '', versions: [] }] });
+      if (url === '/api/settings/key') return json({ set: false });
+      return json(stored);
+    });
+    const createObjectURL = vi.fn(() => 'blob:backup');
+    vi.stubGlobal('URL', Object.assign(URL, { createObjectURL, revokeObjectURL: vi.fn() }));
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    vi.stubGlobal('confirm', () => true);
+    render(<App />);
+    await screen.findByDisplayValue('Void');
+
+    fireEvent.click(screen.getByText('Export'));
+    expect(await screen.findByText('Exported letters for 1 job.')).toBeTruthy();
+    expect(click).toHaveBeenCalled();
+    expect((click.mock.instances[0] as unknown as HTMLAnchorElement).download).toMatch(/^job-search-backup-\d{4}-\d{2}-\d{2}\.json$/);
+    expect(screen.queryByText(/Include my API key/)).toBeNull();
+
+    const file = new File([JSON.stringify(backup)], 'backup.json', { type: 'application/json' });
+    fireEvent.change(screen.getByTestId('backup-file'), { target: { files: [file] } });
+    expect(await screen.findByDisplayValue('Imported Person')).toBeTruthy();
+    expect(screen.getByText('Imported your profile and letters for 0 jobs.')).toBeTruthy();
+    expect(posted).toHaveLength(1);
+
+    fireEvent.change(screen.getByTestId('backup-file'), { target: { files: [new File(['not json'], 'x.json')] } });
+    expect(await screen.findByText(/not a backup of this tool/)).toBeTruthy();
+    click.mockRestore();
+  });
 });
