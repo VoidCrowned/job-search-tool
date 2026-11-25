@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import exampleProfile from '../../examples/profile.example.json';
 import { isProfileEmpty, MAX_LENGTH, MULTILINE_FIELDS, parseProfile, type Profile, type ProfileField } from '../shared/profile.ts';
-import { deleteJson, errorText, getJson, RequestError, sendJson, useJson } from './api.ts';
+import { errorText, RequestError, useLoad } from './api.ts';
+import { backend, type KeyStatus } from './backend/index.ts';
 import { useT } from './i18n/index.tsx';
 
 const SECTIONS: { key: 'personal' | 'goals' | 'cv'; fields: ProfileField[] }[] = [
@@ -12,7 +13,7 @@ const SECTIONS: { key: 'personal' | 'goals' | 'cv'; fields: ProfileField[] }[] =
 
 export function ProfilePage() {
   const t = useT();
-  const result = useJson<Profile>('/api/profile');
+  const result = useLoad<Profile>('profile', (signal) => backend.getProfile(signal));
 
   useEffect(() => {
     document.title = t.app.pageTitle(t.profile.title);
@@ -30,11 +31,6 @@ export function ProfilePage() {
   );
 }
 
-interface KeyStatus {
-  set: boolean;
-  provider?: 'anthropic' | 'openrouter';
-  hint?: string;
-}
 
 type KeyState = { kind: 'idle' } | { kind: 'working' } | { kind: 'saved' } | { kind: 'removed' } | { kind: 'error'; error: RequestError };
 
@@ -48,7 +44,8 @@ function KeySettings() {
 
   useEffect(() => {
     let active = true;
-    getJson<KeyStatus>('/api/settings/key')
+    backend
+      .keyStatus()
       .then((s) => active && setStatus(s))
       .catch((err: unknown) => active && setState({ kind: 'error', error: keyError(err) }));
     return () => {
@@ -69,12 +66,12 @@ function KeySettings() {
 
   function save(e: FormEvent) {
     e.preventDefault();
-    void run(() => sendJson<KeyStatus>('PUT', '/api/settings/key', { key }), { kind: 'saved' });
+    void run(() => backend.setKey(key), { kind: 'saved' });
   }
 
   function remove() {
     if (!window.confirm(t.profile.key.removeConfirm)) return;
-    void run(() => deleteJson<KeyStatus>('/api/settings/key'), { kind: 'removed' });
+    void run(() => backend.removeKey(), { kind: 'removed' });
   }
 
   const typed = key.trim() !== '';
@@ -183,7 +180,7 @@ function ProfileForm({ initial }: { initial: Profile }) {
     e.preventDefault();
     setStatus({ kind: 'saving' });
     try {
-      const stored = await sendJson<Profile>('PUT', '/api/profile', profile);
+      const stored = await backend.saveProfile(profile);
       setSaved(stored);
       setProfile(stored);
       setStatus({ kind: 'saved' });

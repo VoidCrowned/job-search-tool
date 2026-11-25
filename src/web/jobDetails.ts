@@ -2,7 +2,8 @@
 // doesn't load again.
 import { useEffect, useState } from 'react';
 import type { JobDetails } from '../api/types.ts';
-import { getJson, RequestError, type Loadable } from './api.ts';
+import { RequestError, type Loadable } from './api.ts';
+import { backend } from './backend/index.ts';
 
 const MAX_CACHED = 200;
 const cache = new Map<string, JobDetails>();
@@ -13,7 +14,8 @@ export function loadJobDetails(refnr: string): Promise<JobDetails> {
   if (hit) return Promise.resolve(hit);
   let pending = inflight.get(refnr);
   if (!pending) {
-    pending = getJson<JobDetails>(`/api/jobs/${encodeURIComponent(refnr)}`)
+    pending = backend
+      .jobDetails(refnr)
       .then((data) => {
         cache.set(refnr, data);
         // Drop the oldest entry once the cache is full (Map keeps insertion order).

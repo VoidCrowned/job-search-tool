@@ -1,5 +1,5 @@
 // Browser-side calls to my local server (never to the Jobsuche API directly).
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import type { Messages } from './i18n/en.ts';
 
@@ -74,25 +74,32 @@ export type Loadable<T> =
   | { state: 'error'; error: RequestError }
   | { state: 'done'; data: T };
 
-/** Fetches `url` whenever it changes; `null` means "don't fetch". Aborts outdated requests. */
-export function useJson<T>(url: string | null): Loadable<T> {
-  const [result, setResult] = useState<{ url: string | null; value: Loadable<T> }>({ url: null, value: { state: 'idle' } });
+/**
+ * Runs `load` whenever `key` changes; `null` means "don't load". Aborts outdated requests.
+ * `key` names what is loaded (e.g. the search query), so `load` itself may be a new function on every render.
+ */
+export function useLoad<T>(key: string | null, load: (signal: AbortSignal) => Promise<T>): Loadable<T> {
+  const [result, setResult] = useState<{ key: string | null; value: Loadable<T> }>({ key: null, value: { state: 'idle' } });
+  const loadRef = useRef(load);
+  useEffect(() => {
+    loadRef.current = load;
+  });
 
   useEffect(() => {
-    if (!url) return;
+    if (key === null) return;
     const controller = new AbortController();
-    getJson<T>(url, controller.signal).then(
-      (data) => setResult({ url, value: { state: 'done', data } }),
+    loadRef.current(controller.signal).then(
+      (data) => setResult({ key, value: { state: 'done', data } }),
       (error: unknown) => {
         if (controller.signal.aborted) return;
         const err = error instanceof RequestError ? error : new RequestError(0, String(error));
-        setResult({ url, value: { state: 'error', error: err } });
+        setResult({ key, value: { state: 'error', error: err } });
       },
     );
     return () => controller.abort();
-  }, [url]);
+  }, [key]);
 
-  if (!url) return { state: 'idle' };
-  // Until the effect has stored a result for the current URL, we are loading.
-  return result.url === url ? result.value : { state: 'loading' };
+  if (key === null) return { state: 'idle' };
+  // Until the effect has stored a result for the current key, we are loading.
+  return result.key === key ? result.value : { state: 'loading' };
 }
