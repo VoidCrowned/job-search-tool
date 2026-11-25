@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { jobPageUrl } from '../api/client.ts';
 import type { JobDetails } from '../api/types.ts';
+import { backend } from './backend/index.ts';
 import { formatContract, formatDate, formatOfferType, formatPay, workingTimes } from './format.ts';
 import { useT } from './i18n/index.tsx';
 import { renderMarkdown } from './markdown.ts';
@@ -11,7 +12,7 @@ function Logo({ hash, alt, small = false }: { hash: string; alt: string; small?:
   return (
     <img
       className={small ? 'logo small' : 'logo'}
-      src={`/api/logo/${encodeURIComponent(hash)}`}
+      src={backend.logoUrl(hash)}
       alt={alt}
       onError={() => setFailed(true)}
     />

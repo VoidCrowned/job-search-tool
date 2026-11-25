@@ -14,7 +14,8 @@ import {
   type SearchParams,
 } from '../api/params.ts';
 import type { JobSearchItem, SearchResponse } from '../api/types.ts';
-import { errorText, useJson } from './api.ts';
+import { errorText, useLoad } from './api.ts';
+import { backend } from './backend/index.ts';
 import { formatDate, formatNumber, formatPay, formatPlace } from './format.ts';
 import { useT } from './i18n/index.tsx';
 import { JobDetailsView } from './JobDetailsView.tsx';
@@ -37,7 +38,10 @@ export function SearchPage({ search }: { search: string }) {
   const t = useT();
   const params = withAppDefaults(parseSearchParams(new URLSearchParams(search)).params);
   const query = toAppQuery(params).toString();
-  const result = useJson<SearchResponse>(hasSearch(params) ? `/api/jobs?${toSearchRequest(params)}` : null);
+  const request = toSearchRequest(params).toString();
+  const result = useLoad<SearchResponse>(hasSearch(params) ? request : null, (signal) =>
+    backend.searchJobs(new URLSearchParams(request), signal),
+  );
 
   useEffect(() => {
     rememberSearch(query ? `?${query}` : '');

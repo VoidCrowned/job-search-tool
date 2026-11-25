@@ -2,7 +2,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { PLACEHOLDER, type LanguageChoice, type LetterFile, type LetterVersion } from '../shared/letter.ts';
 import { isProfileEmpty, type Profile } from '../shared/profile.ts';
-import { errorText, getJson, RequestError, sendJson } from './api.ts';
+import { errorText, RequestError } from './api.ts';
+import { backend, type AiConfig } from './backend/index.ts';
 import { AtsChecklist } from './AtsChecklist.tsx';
 import { formatDateTime } from './format.ts';
 import { useT } from './i18n/index.tsx';
@@ -10,11 +11,6 @@ import { onLinkClick } from './router.ts';
 
 export const LETTER_ANCHOR = 'letter';
 
-interface AiConfig {
-  ai: boolean;
-  model?: string;
-  provider?: 'anthropic' | 'openrouter';
-}
 
 interface Loaded {
   file: LetterFile;
@@ -66,9 +62,9 @@ export function LetterPanel({ refnr }: { refnr: string }) {
     (async () => {
       try {
         const [file, profile, config] = await Promise.all([
-          getJson<LetterFile>(`/api/letters/${encodeURIComponent(refnr)}`),
-          getJson<Profile>('/api/profile'),
-          getJson<AiConfig>('/api/config'),
+          backend.getLetters(refnr),
+          backend.getProfile(),
+          backend.aiConfig(),
         ]);
         if (!Array.isArray(file?.versions)) throw new RequestError(500, 'Unexpected answer from the server.');
         if (!active) return;
@@ -129,7 +125,6 @@ function LetterEditor({ refnr, initial, profile, config }: { refnr: string; init
       if (!next.delete(note)) next.add(note);
       return next;
     });
-  const url = `/api/letters/${encodeURIComponent(refnr)}`;
 
   function show(result: { file: LetterFile; version: LetterVersion }, next: Status) {
     setFile(result.file);
@@ -154,7 +149,7 @@ function LetterEditor({ refnr, initial, profile, config }: { refnr: string; init
         ? { language: current.language, mode, confirmed: [...new Set([...confirmedFor(file, current), ...notes.filter((n) => ticked.has(n))])] }
         : { language, mode };
     try {
-      show(await sendJson('POST', `${url}/generate`, body), { kind: 'idle' });
+      show(await backend.generateLetter(refnr, body), { kind: 'idle' });
     } catch (err) {
       setStatus({ kind: 'error', error: toRequestError(err) });
     }
@@ -164,7 +159,7 @@ function LetterEditor({ refnr, initial, profile, config }: { refnr: string; init
     if (!current) return;
     setStatus({ kind: 'working' });
     try {
-      show(await sendJson('POST', `${url}/versions`, { text, language: current.language }), { kind: 'saved' });
+      show(await backend.saveVersion(refnr, { text, language: current.language }), { kind: 'saved' });
     } catch (err) {
       setStatus({ kind: 'error', error: toRequestError(err) });
     }
