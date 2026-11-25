@@ -76,6 +76,16 @@ describe('profile page', () => {
     expect(await screen.findByLabelText('Full name')).toBeTruthy();
   });
 
+  it('"Job search" in the header returns to the last search', async () => {
+    window.history.replaceState(null, '', '/?was=Pflege&wo=Hamburg');
+    render(<App />);
+    fireEvent.click(screen.getByText('Profile'));
+    expect(window.location.pathname).toBe('/profile');
+    expect(screen.getByText('Job search').getAttribute('href')).toBe('/?was=Pflege&wo=Hamburg');
+    fireEvent.click(screen.getByText('Job search'));
+    expect(window.location.pathname + window.location.search).toBe('/?was=Pflege&wo=Hamburg');
+  });
+
   it('the example profile is valid and complete', () => {
     const { profile, errors } = parseProfile(exampleProfile);
     expect(errors).toEqual([]);

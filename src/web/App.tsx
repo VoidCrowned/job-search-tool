@@ -3,6 +3,7 @@ import { JobPage } from './JobPage.tsx';
 import { ProfilePage } from './ProfilePage.tsx';
 import { AboutPage } from './AboutPage.tsx';
 import { isHosted } from './backend/index.ts';
+import { lastSearchHref } from './lastSearch.ts';
 import { SearchPage } from './SearchPage.tsx';
 import { ThemeSelect } from './theme.tsx';
 import { appHref, onLinkClick, useLocation } from './router.ts';
@@ -31,13 +32,15 @@ function Shell() {
   const t = useT();
   const location = useLocation();
   const onProfile = location.pathname === '/profile';
+  // "Job search" goes back to the last search of this tab, not to an empty one.
+  const searchHref = location.pathname === '/' ? `/${location.search}` : lastSearchHref();
 
   return (
     <div className="page">
       <header className="site-header">
         {/* Pages on the left, settings (language, theme) on the right. */}
         <nav className="site-nav" aria-label={t.app.navigation}>
-          <a href={appHref('/')} onClick={onLinkClick} className="nav-link" aria-current={onProfile ? undefined : 'page'}>
+          <a href={appHref(searchHref)} onClick={onLinkClick} className="nav-link" aria-current={onProfile ? undefined : 'page'}>
             {t.app.jobSearch}
           </a>
           <span className="nav-separator" aria-hidden="true">
