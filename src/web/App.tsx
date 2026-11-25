@@ -4,7 +4,7 @@ import { ProfilePage } from './ProfilePage.tsx';
 import { AboutPage } from './AboutPage.tsx';
 import { isHosted } from './backend/index.ts';
 import { lastSearchHref } from './lastSearch.ts';
-import { clearResultsView } from './resultsView.ts';
+import { resetResultsScroll } from './resultsView.ts';
 import { SearchPage } from './SearchPage.tsx';
 import { ThemeSelect } from './theme.tsx';
 import { appHref, onLinkClick, useLocation } from './router.ts';
@@ -30,12 +30,12 @@ function Route({ pathname, search }: { pathname: string; search: string }) {
 }
 
 /**
- * The header's "Job search": the same search, but fresh, at the top with no cards open. (Only "Back to results"
- * and the browser's Back button bring back the old scroll position.)
+ * The header's "Job search": the same search with the same cards open, but at the top of the page.
+ * (Only "Back to results" and the browser's Back button bring back the old scroll position.)
  */
 function openSearchFresh(e: React.MouseEvent<HTMLAnchorElement>) {
   if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-  clearResultsView();
+  resetResultsScroll();
   if (window.location.pathname === appHref('/')) {
     // Already on the search: navigating would save and keep the view, so just go to the top.
     e.preventDefault();
