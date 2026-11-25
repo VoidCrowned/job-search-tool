@@ -5,7 +5,8 @@ export const de: Messages = {
   locale: 'de-DE',
 
   app: {
-    brand: 'Jobsuche',
+    jobSearch: 'Jobsuche',
+    navigation: 'Hauptnavigation',
     language: 'Sprache',
     notFound: 'Seite nicht gefunden.',
     backToSearch: 'Zurück zur Suche',
