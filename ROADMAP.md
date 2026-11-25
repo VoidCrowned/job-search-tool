@@ -35,7 +35,7 @@
 - [x] Job-search relay (Cloudflare Worker) (#73)
 - [x] Browser backend: data and key in the browser (#74)
 - [x] Export and import all data (#75)
-- [ ] Deploy the online version (#76)
+- [x] Deploy the online version (#76)
 
 ## Later
 - [ ] More display languages (#18)
