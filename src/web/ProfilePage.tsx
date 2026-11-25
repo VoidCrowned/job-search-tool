@@ -78,43 +78,47 @@ function KeySettings() {
 
   const provider = status?.provider === 'anthropic' ? 'Anthropic' : 'OpenRouter';
   return (
-    <form className="profile-form key-settings" onSubmit={save}>
-      <fieldset className="profile-section">
+    <form className="key-settings" onSubmit={save}>
+      <fieldset className="profile-section key-section">
         <legend>{t.profile.key.title}</legend>
-        <p className="hint">{t.profile.key.intro}</p>
-        {status && <p>{status.set ? t.profile.key.isSet(provider, status.hint ?? '') : t.profile.key.notSet}</p>}
-        <div className="profile-field">
-          <label htmlFor="api-key">{status?.set ? t.profile.key.replaceLabel : t.profile.key.label}</label>
-          <input
-            id="api-key"
-            type="password"
-            autoComplete="off"
-            spellCheck={false}
-            value={key}
-            onChange={(e) => setKey(e.target.value)}
-            placeholder="sk-or-…"
-          />
+        <div className="key-info">
+          <p className="hint">{t.profile.key.intro}</p>
+          {status && <p>{status.set ? t.profile.key.isSet(provider, status.hint ?? '') : t.profile.key.notSet}</p>}
+        </div>
+        <div className="key-entry">
+          <div className="profile-field">
+            <label htmlFor="api-key">{status?.set ? t.profile.key.replaceLabel : t.profile.key.label}</label>
+            <input
+              id="api-key"
+              type="password"
+              autoComplete="off"
+              spellCheck={false}
+              value={key}
+              onChange={(e) => setKey(e.target.value)}
+              placeholder="sk-or-…"
+            />
+          </div>
+          <div className="key-actions">
+            <button type="submit" className="primary" disabled={!key.trim() || state.kind === 'working'}>
+              {t.profile.key.save}
+            </button>
+            {status?.set && (
+              <button type="button" className="button" onClick={remove} disabled={state.kind === 'working'}>
+                {t.profile.key.remove}
+              </button>
+            )}
+          </div>
+          <span aria-live="polite" className={state.kind === 'error' ? 'error' : 'hint'}>
+            {state.kind === 'error'
+              ? errorText(state.error, t)
+              : state.kind === 'saved'
+                ? t.profile.key.saved
+                : state.kind === 'removed'
+                  ? t.profile.key.removed
+                  : ''}
+          </span>
         </div>
       </fieldset>
-      <div className="form-actions">
-        <button type="submit" className="primary" disabled={!key.trim() || state.kind === 'working'}>
-          {t.profile.key.save}
-        </button>
-        {status?.set && (
-          <button type="button" className="button" onClick={remove} disabled={state.kind === 'working'}>
-            {t.profile.key.remove}
-          </button>
-        )}
-        <span aria-live="polite" className={state.kind === 'error' ? 'error' : 'hint'}>
-          {state.kind === 'error'
-            ? errorText(state.error, t)
-            : state.kind === 'saved'
-              ? t.profile.key.saved
-              : state.kind === 'removed'
-                ? t.profile.key.removed
-                : ''}
-        </span>
-      </div>
     </form>
   );
 }
