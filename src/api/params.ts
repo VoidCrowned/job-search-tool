@@ -136,13 +136,30 @@ export function toApiQuery(params: SearchParams): URLSearchParams {
   return q;
 }
 
+/**
+ * The website's own defaults, which differ from the Jobsuche API's: temp agency jobs (Zeitarbeit) are left out
+ * unless asked for, since hardly anyone searches for them.
+ */
+export function withAppDefaults(params: SearchParams): SearchParams {
+  return { ...params, zeitarbeit: params.zeitarbeit ?? false };
+}
+
 /** Same as toApiQuery, but leaves out defaults so URLs stay short. Used for the web app's own URLs. */
 export function toAppQuery(params: SearchParams): URLSearchParams {
   const q = toApiQuery(params);
+  // Excluding temp agencies is the website's default (see withAppDefaults), so only "true" needs to be in the URL.
+  if (params.zeitarbeit === false) q.delete('zeitarbeit');
   // Paging goes last so URLs read "what, where, filters, page".
   q.delete('page');
   q.delete('size');
   if (params.page !== 1) q.set('page', String(params.page));
   if (params.size !== DEFAULT_SIZE) q.set('size', String(params.size));
+  return q;
+}
+
+/** The query for the local server's /api/jobs: the short app query, plus the website's defaults spelled out. */
+export function toSearchRequest(params: SearchParams): URLSearchParams {
+  const q = toAppQuery(params);
+  if (params.zeitarbeit === false) q.set('zeitarbeit', 'false');
   return q;
 }

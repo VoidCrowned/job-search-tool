@@ -6,7 +6,9 @@ import {
   MAX_RESULT_WINDOW,
   parseSearchParams,
   toAppQuery,
+  toSearchRequest,
   UMKREIS_CHOICES,
+  withAppDefaults,
   VEROEFFENTLICHTSEIT_CHOICES,
   type Angebotsart,
   type SearchParams,
@@ -33,9 +35,9 @@ function hasSearch(p: SearchParams) {
 
 export function SearchPage({ search }: { search: string }) {
   const t = useT();
-  const { params } = parseSearchParams(new URLSearchParams(search));
+  const params = withAppDefaults(parseSearchParams(new URLSearchParams(search)).params);
   const query = toAppQuery(params).toString();
-  const result = useJson<SearchResponse>(hasSearch(params) ? `/api/jobs?${query}` : null);
+  const result = useJson<SearchResponse>(hasSearch(params) ? `/api/jobs?${toSearchRequest(params)}` : null);
 
   useEffect(() => {
     rememberSearch(query ? `?${query}` : '');
@@ -60,7 +62,7 @@ export function SearchPage({ search }: { search: string }) {
 }
 
 function hasFilters(p: SearchParams) {
-  return Boolean(p.angebotsart || p.arbeitszeit || p.befristung || p.veroeffentlichtseit !== undefined || p.zeitarbeit === false);
+  return Boolean(p.angebotsart || p.arbeitszeit || p.befristung || p.veroeffentlichtseit !== undefined || p.zeitarbeit === true);
 }
 
 function SearchForm({ search, initial }: { search: string; initial: SearchParams }) {
@@ -191,8 +193,8 @@ function SearchForm({ search, initial }: { search: string; initial: SearchParams
         <label className="check">
           <input
             type="checkbox"
-            checked={draft.zeitarbeit !== false}
-            onChange={(e) => apply({ zeitarbeit: e.target.checked ? undefined : false })}
+            checked={draft.zeitarbeit === true}
+            onChange={(e) => apply({ zeitarbeit: e.target.checked })}
           />
           {t.search.includeTempAgencies}
         </label>
