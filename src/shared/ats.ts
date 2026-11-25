@@ -56,6 +56,26 @@ export function containsTerm(text: string, term: string): boolean {
   return parts.length > 0 && parts.every((w) => hay.includes(w.slice(0, 6)));
 }
 
+const LEGAL_FORM =
+  /[\s,]+(gemeinnützige\s+)?(g?GmbH(\s*&\s*Co\.?\s*KG(aA)?)?|mbH|e\.\s?V\.?|e\.\s?G\.?|eG|AG|KGaA|KG|OHG|GbR|SE|UG(\s*\(haftungsbeschränkt\))?|Ltd\.?|Inc\.?|LLC)\s*$/i;
+
+/**
+ * A company counts as named if its full name appears, the name without its legal form ("e.V.", "GmbH"),
+ * or a form with the leading words shortened to initials ("DRK Landesverband Hamburg").
+ */
+export function containsCompany(text: string, company: string): boolean {
+  let core = company.trim();
+  for (let prev = ''; prev !== core; ) [prev, core] = [core, core.replace(LEGAL_FORM, '').trim()];
+  const candidates = [company, core];
+  const words = core.split(/\s+/).filter(Boolean);
+  for (let k = 2; k <= words.length; k++) {
+    const head = words.slice(0, k);
+    if (!head.every((w) => /^\p{Lu}/u.test(w))) break;
+    candidates.push([head.map((w) => w[0]).join(''), ...words.slice(k)].join(' '));
+  }
+  return candidates.some((c) => c.trim() && containsTerm(text, c));
+}
+
 export function checkAts(text: string, input: AtsInput = {}): AtsCheck[] {
   const words = text.match(/[\p{L}\p{N}]+/gu)?.length ?? 0;
   const placeholders = text.match(PLACEHOLDER)?.length ?? 0;
@@ -65,7 +85,7 @@ export function checkAts(text: string, input: AtsInput = {}): AtsCheck[] {
     { id: 'symbols', ok: !EMOJI.test(text) && !DECORATIVE.test(text) },
     { id: 'placeholders', ok: placeholders === 0, count: placeholders },
   ];
-  if (input.company?.trim()) checks.push({ id: 'company', ok: containsTerm(text, input.company) });
+  if (input.company?.trim()) checks.push({ id: 'company', ok: containsCompany(text, input.company) });
   if (input.jobTitle?.trim()) checks.push({ id: 'jobTitle', ok: containsTerm(text, coreTitle(input.jobTitle)) });
 
   const keywords = [...new Set((input.keywords ?? []).map((k) => k.trim()).filter(Boolean))];
