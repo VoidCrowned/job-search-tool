@@ -22,7 +22,7 @@ describe('server', () => {
   it('unknown API routes give a JSON 404', async () => {
     const res = await createApp({ client: fakeClient() }).request('/api/nope');
     expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ error: 'Not found.' });
+    expect(await res.json()).toEqual({ error: 'Not found.', code: 'UNKNOWN_ROUTE' });
   });
 });
 

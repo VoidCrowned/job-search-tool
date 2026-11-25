@@ -258,7 +258,7 @@ export function createApp(options: AppOptions = {}) {
     });
   });
 
-  app.all('/api/*', (c) => c.json({ error: 'Not found.' }, 404));
+  app.all('/api/*', (c) => c.json({ error: 'Not found.', code: 'UNKNOWN_ROUTE' }, 404));
 
   return app;
 }

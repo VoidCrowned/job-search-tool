@@ -24,8 +24,8 @@ export function ProfilePage() {
       <p className="hint">{t.profile.intro}</p>
       {result.state === 'loading' && <p className="hint">{t.profile.loading}</p>}
       {result.state === 'error' && <p className="error">{errorText(result.error, t)}</p>}
-      {result.state === 'done' && <ProfileForm initial={result.data} />}
       <KeySettings />
+      {result.state === 'done' && <ProfileForm initial={result.data} />}
     </article>
   );
 }
@@ -49,7 +49,7 @@ function KeySettings() {
     let active = true;
     getJson<KeyStatus>('/api/settings/key')
       .then((s) => active && setStatus(s))
-      .catch((err: unknown) => active && setState({ kind: 'error', error: toRequestError(err) }));
+      .catch((err: unknown) => active && setState({ kind: 'error', error: keyError(err) }));
     return () => {
       active = false;
     };
@@ -62,7 +62,7 @@ function KeySettings() {
       setKey('');
       setState(done);
     } catch (err) {
-      setState({ kind: 'error', error: toRequestError(err) });
+      setState({ kind: 'error', error: keyError(err) });
     }
   }
 
@@ -124,6 +124,12 @@ function KeySettings() {
 }
 
 const toRequestError = (err: unknown) => (err instanceof RequestError ? err : new RequestError(0, String(err)));
+
+/** The key routes always exist, so a 404 there means the server still runs older code (before this feature). */
+function keyError(err: unknown): RequestError {
+  const e = toRequestError(err);
+  return e.status === 404 ? new RequestError(404, e.message, 'UNKNOWN_ROUTE') : e;
+}
 
 type Status = { kind: 'idle' } | { kind: 'saving' } | { kind: 'saved' } | { kind: 'example' } | { kind: 'error'; error: RequestError };
 
