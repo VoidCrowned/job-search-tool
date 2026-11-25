@@ -82,4 +82,24 @@ describe('returning to the results', () => {
     await screen.findByText(first.stellenangebotsTitel);
     expect(isOpen(first.stellenangebotsTitel)).toBe(false);
   });
+
+  it('"Job search" in the header shows the same search at the top, with cards closed', async () => {
+    await openTwoCardsAndLeave();
+    fireEvent.click(screen.getByText('Profile'));
+    await screen.findByRole('heading', { level: 1, name: 'My profile' });
+    fireEvent.click(screen.getByText('Job search'));
+    await screen.findByText(first.stellenangebotsTitel);
+    expect(window.location.search).toBe('?was=Pflege&wo=Hamburg');
+    expect(isOpen(first.stellenangebotsTitel)).toBe(false);
+    expect(window.scrollY).toBe(0);
+  });
+
+  it('"Job search" on the search page itself scrolls to the top', async () => {
+    render(<App />);
+    await screen.findByText(first.stellenangebotsTitel);
+    setScrollY(900);
+    fireEvent.click(screen.getByText('Job search'));
+    expect(window.scrollY).toBe(0);
+    expect(window.location.search).toBe('?was=Pflege&wo=Hamburg');
+  });
 });
