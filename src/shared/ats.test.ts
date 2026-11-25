@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkAts, containsTerm } from './ats.ts';
+import { checkAts, containsCompany, containsTerm } from './ats.ts';
 
 const filler = (n: number) => Array.from({ length: n }, (_, i) => `wort${i}`).join(' ');
 const byId = (checks: ReturnType<typeof checkAts>) => Object.fromEntries(checks.map((c) => [c.id, c]));
@@ -11,6 +11,23 @@ describe('containsTerm', () => {
     expect(containsTerm('mit agilen Methoden wie Scrum', 'agile Methoden')).toBe(true);
     expect(containsTerm('Ich habe Erfahrungen gesammelt', 'IT')).toBe(false);
     expect(containsTerm('Projektleitung', 'Qualitätsmanagement')).toBe(false);
+  });
+});
+
+describe('containsCompany', () => {
+  const drk = 'Deutsches Rotes Kreuz Landesverband Hamburg e.V.';
+  it('accepts the full name, the name without legal form, and initials', () => {
+    expect(containsCompany(`beim ${drk} bewerbe ich mich`, drk)).toBe(true);
+    expect(containsCompany('DRK Landesverband Hamburg e.V.\nFrau Kalina', drk)).toBe(true);
+    expect(containsCompany('beim DRK Landesverband Hamburg', drk)).toBe(true);
+    expect(containsCompany('bei der AlsterHerz Pflege', 'AlsterHerz Pflege GmbH')).toBe(true);
+    expect(containsCompany('Siemens', 'Siemens AG')).toBe(true);
+    expect(containsCompany('Müller Bau', 'Müller Bau GmbH & Co. KG')).toBe(true);
+  });
+  it('rejects other companies and partial names', () => {
+    expect(containsCompany('beim DRK Kreisverband Harburg', drk)).toBe(false);
+    expect(containsCompany('in Hamburg', drk)).toBe(false);
+    expect(containsCompany('bei der AlsterHerz Pflege', 'Asklepios Kliniken GmbH')).toBe(false);
   });
 });
 

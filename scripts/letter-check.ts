@@ -2,6 +2,7 @@
 // Usage: npm run letter:check -- --ai      Prints one JSON object; exit code 1 if a check fails.
 import { existsSync } from 'node:fs';
 import { aiConfigFromEnv, createClaudeGenerator } from '../src/server/letter/claude.ts';
+import { containsCompany } from '../src/shared/ats.ts';
 import { parseProfile } from '../src/shared/profile.ts';
 import exampleProfile from '../examples/profile.example.json' with { type: 'json' };
 import type { JobDetails } from '../src/api/types.ts';
@@ -26,7 +27,7 @@ try {
   const result = await createClaudeGenerator(config)({ profile, job: job as JobDetails, language: 'de' });
   const checks = {
     hasLetter: result.letter.length > 300,
-    namesCompany: result.letter.includes((job as JobDetails).firma ?? '__'),
+    namesCompany: containsCompany(result.letter, (job as JobDetails).firma ?? '__'),
     namesReference: result.letter.includes(job.referenznummer),
     usesCandidateName: result.letter.includes(profile.name),
     germanGreeting: /Sehr geehrte/.test(result.letter),
