@@ -1,8 +1,8 @@
 // Letter templates for when no API key is set. Filled from the profile and the job ad;
 // anything unknown stays as a visible [Placeholder] for the user to fill in.
 import type { JobDetails } from '../../api/types.ts';
-import type { LetterLanguage } from '../../shared/letter.ts';
-import type { Profile } from '../../shared/profile.ts';
+import type { LetterLanguage } from '../letter.ts';
+import type { Profile } from '../profile.ts';
 
 interface Words {
   locale: string;

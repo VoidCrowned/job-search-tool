@@ -1,7 +1,7 @@
 // Live check of Claude letter writing. Costs one letter (about 8 cents), so it only runs with --ai.
 // Usage: npm run letter:check -- --ai      Prints one JSON object; exit code 1 if a check fails.
 import { existsSync } from 'node:fs';
-import { aiConfigFromEnv, createClaudeGenerator } from '../src/server/letter/claude.ts';
+import { aiConfigFromEnv, createClaudeGenerator } from '../src/shared/letter/claude.ts';
 import { containsCompany } from '../src/shared/ats.ts';
 import { parseProfile } from '../src/shared/profile.ts';
 import exampleProfile from '../examples/profile.example.json' with { type: 'json' };
@@ -16,7 +16,7 @@ function done(result: object, ok: boolean): never {
 }
 
 if (!process.argv.includes('--ai')) done({ error: 'This check calls Claude and costs about 8 cents. Run it with: npm run letter:check -- --ai' }, false);
-const config = aiConfigFromEnv();
+const config = aiConfigFromEnv(process.env);
 if (!config.apiKey) done({ error: 'No ANTHROPIC_API_KEY or OPENROUTER_API_KEY found (environment or .env).' }, false);
 
 // The fictional example profile: no real personal data is sent.
