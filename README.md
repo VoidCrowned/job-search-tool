@@ -20,9 +20,10 @@ Then open http://localhost:5173.
 
 Without an API key, you get a template filled from your profile. With a key from [Anthropic](https://platform.claude.com/settings/keys) or [OpenRouter](https://openrouter.ai/settings/keys), Claude writes the letter:
 
-1. Copy `.env.example` to `.env`: `cp .env.example .env`
-2. In `.env`, remove the `#` in front of `ANTHROPIC_API_KEY=` (Anthropic key, `sk-ant-…`) or `OPENROUTER_API_KEY=` (OpenRouter key, `sk-or-…`) and paste your key after the `=`.
-3. Restart `npm run dev`.
+1. Open **Profile** and scroll to **Claude API key**.
+2. Paste your key (`sk-or-…` or `sk-ant-…`) and press **Save key**. It's saved in `.env` on this computer and works straight away.
+
+You can also put it into `.env` yourself (see `.env.example`) and restart `npm run dev`.
 
 Each letter costs about 8 cents with the default model (Claude Opus 5.5). `npm run letter:check -- --ai` tests the setup with one fictional letter. Through OpenRouter, the automatic retry on another model after a refusal isn't available.
 

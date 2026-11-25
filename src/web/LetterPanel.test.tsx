@@ -179,7 +179,7 @@ describe('letter panel', () => {
     letterServer();
     render(<App />);
     fireEvent.click(await screen.findByText('Write application'));
-    expect(await panel().findByText(/add an Anthropic or OpenRouter API key/)).toBeTruthy();
+    expect(await panel().findByText(/add an OpenRouter or Anthropic API key on your profile page/)).toBeTruthy();
     expect(panel().queryByText('Write with Claude')).toBeNull();
   });
 

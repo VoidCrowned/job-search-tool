@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import exampleProfile from '../../examples/profile.example.json';
 import { isProfileEmpty, MAX_LENGTH, MULTILINE_FIELDS, parseProfile, type Profile, type ProfileField } from '../shared/profile.ts';
-import { errorText, RequestError, sendJson, useJson } from './api.ts';
+import { deleteJson, errorText, getJson, RequestError, sendJson, useJson } from './api.ts';
 import { useT } from './i18n/index.tsx';
 
 const SECTIONS: { key: 'personal' | 'goals' | 'cv'; fields: ProfileField[] }[] = [
@@ -25,9 +25,101 @@ export function ProfilePage() {
       {result.state === 'loading' && <p className="hint">{t.profile.loading}</p>}
       {result.state === 'error' && <p className="error">{errorText(result.error, t)}</p>}
       {result.state === 'done' && <ProfileForm initial={result.data} />}
+      <KeySettings />
     </article>
   );
 }
+
+interface KeyStatus {
+  set: boolean;
+  provider?: 'anthropic' | 'openrouter';
+  hint?: string;
+}
+
+type KeyState = { kind: 'idle' } | { kind: 'working' } | { kind: 'saved' } | { kind: 'removed' } | { kind: 'error'; error: RequestError };
+
+/** The Claude API key: saved by the server in .env. The browser only ever sees a short hint, never the key. */
+function KeySettings() {
+  const t = useT();
+  const [status, setStatus] = useState<KeyStatus | undefined>();
+  const [key, setKey] = useState('');
+  const [state, setState] = useState<KeyState>({ kind: 'idle' });
+
+  useEffect(() => {
+    let active = true;
+    getJson<KeyStatus>('/api/settings/key')
+      .then((s) => active && setStatus(s))
+      .catch((err: unknown) => active && setState({ kind: 'error', error: toRequestError(err) }));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  async function run(action: () => Promise<KeyStatus>, done: KeyState) {
+    setState({ kind: 'working' });
+    try {
+      setStatus(await action());
+      setKey('');
+      setState(done);
+    } catch (err) {
+      setState({ kind: 'error', error: toRequestError(err) });
+    }
+  }
+
+  function save(e: FormEvent) {
+    e.preventDefault();
+    void run(() => sendJson<KeyStatus>('PUT', '/api/settings/key', { key }), { kind: 'saved' });
+  }
+
+  function remove() {
+    if (!window.confirm(t.profile.key.removeConfirm)) return;
+    void run(() => deleteJson<KeyStatus>('/api/settings/key'), { kind: 'removed' });
+  }
+
+  const provider = status?.provider === 'anthropic' ? 'Anthropic' : 'OpenRouter';
+  return (
+    <form className="profile-form key-settings" onSubmit={save}>
+      <fieldset className="profile-section">
+        <legend>{t.profile.key.title}</legend>
+        <p className="hint">{t.profile.key.intro}</p>
+        {status && <p>{status.set ? t.profile.key.isSet(provider, status.hint ?? '') : t.profile.key.notSet}</p>}
+        <div className="profile-field">
+          <label htmlFor="api-key">{status?.set ? t.profile.key.replaceLabel : t.profile.key.label}</label>
+          <input
+            id="api-key"
+            type="password"
+            autoComplete="off"
+            spellCheck={false}
+            value={key}
+            onChange={(e) => setKey(e.target.value)}
+            placeholder="sk-or-…"
+          />
+        </div>
+      </fieldset>
+      <div className="form-actions">
+        <button type="submit" className="primary" disabled={!key.trim() || state.kind === 'working'}>
+          {t.profile.key.save}
+        </button>
+        {status?.set && (
+          <button type="button" className="button" onClick={remove} disabled={state.kind === 'working'}>
+            {t.profile.key.remove}
+          </button>
+        )}
+        <span aria-live="polite" className={state.kind === 'error' ? 'error' : 'hint'}>
+          {state.kind === 'error'
+            ? errorText(state.error, t)
+            : state.kind === 'saved'
+              ? t.profile.key.saved
+              : state.kind === 'removed'
+                ? t.profile.key.removed
+                : ''}
+        </span>
+      </div>
+    </form>
+  );
+}
+
+const toRequestError = (err: unknown) => (err instanceof RequestError ? err : new RequestError(0, String(err)));
 
 type Status = { kind: 'idle' } | { kind: 'saving' } | { kind: 'saved' } | { kind: 'example' } | { kind: 'error'; error: RequestError };
 
