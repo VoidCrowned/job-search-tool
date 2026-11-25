@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type Anthropic from '@anthropic-ai/sdk';
-import { aiConfigFromEnv, buildPrompt, createClaudeGenerator, DEFAULT_MODEL, DEFAULT_OPENROUTER_MODEL, parseOutput, RefusalError } from './claude.ts';
+import { aiConfigFromEnv, buildPrompt, buildRepairPrompt, createClaudeGenerator, DEFAULT_MODEL, DEFAULT_OPENROUTER_MODEL, parseOutput, RefusalError } from './claude.ts';
 import { emptyProfile } from '../../shared/profile.ts';
 import type { JobDetails } from '../../api/types.ts';
 import detailsFixture from '../../api/fixtures/details.json';
@@ -74,7 +74,62 @@ describe('buildPrompt', () => {
   });
 
   it('says so when the profile is empty', () => {
-    expect(buildPrompt({ profile: emptyProfile(), job, language: 'de', today }).user).toMatch(/\(empty: use placeholders/);
+    expect(buildPrompt({ profile: emptyProfile(), job, language: 'de', today }).user).toMatch(/\(empty: leave out all personal details/);
+  });
+});
+
+describe('no placeholders', () => {
+  const answer = (letter: string, adKeywords: string[] = []) => ({
+    model: DEFAULT_MODEL,
+    stop_reason: 'end_turn',
+    usage: { input_tokens: 1000, output_tokens: 500 },
+    content: [{ type: 'text', text: JSON.stringify({ letter, adKeywords }) }],
+  });
+  function clientAnswering(...answers: (ReturnType<typeof answer> | Error)[]) {
+    const create = vi.fn(async () => {
+      const next = answers.shift();
+      if (!next || next instanceof Error) throw next ?? new Error('no more answers');
+      return next;
+    });
+    return { client: { beta: { messages: { create } }, messages: { create } } as unknown as Anthropic, create };
+  }
+  const generate = (client: Anthropic) => createClaudeGenerator({ apiKey: 'k', model: DEFAULT_MODEL }, client)({ profile, job, language: 'de' });
+
+  it('tells Claude the letter must be ready to send', () => {
+    const { system, user } = buildPrompt({ profile, job, language: 'de', today });
+    expect(system).toMatch(/Never write placeholders, square brackets/);
+    expect(system).not.toMatch(/write a short placeholder/);
+    expect(user).toMatch(/No placeholders or square brackets anywhere/);
+  });
+
+  it('makes no extra call for a clean letter', async () => {
+    const { client, create } = clientAnswering(answer('Fertiger Brief.', ['Pflege']));
+    expect((await generate(client)).letter).toBe('Fertiger Brief.');
+    expect(create).toHaveBeenCalledTimes(1);
+  });
+
+  it('repairs placeholders with one more call, keeping the first keywords and adding up usage', async () => {
+    const { client, create } = clientAnswering(answer('Ich ziehe [Umzug ergänzen] gern um.', ['Pflege']), answer('Ich ziehe gern um.'));
+    const result = await generate(client);
+    expect(result).toMatchObject({ letter: 'Ich ziehe gern um.', adKeywords: ['Pflege'], usage: { inputTokens: 2000, outputTokens: 1000 } });
+    expect(create).toHaveBeenCalledTimes(2);
+    const repair = (create.mock.calls[1] as unknown[])[0] as { messages: { content: string }[]; output_config: { effort: string } };
+    expect(repair.output_config.effort).toBe('low');
+    expect(repair.messages[0].content).toContain('[Umzug ergänzen]');
+  });
+
+  it('removes what the repair leaves, or everything if the repair fails', async () => {
+    const left = clientAnswering(answer('A [x1].\n\n[Optional: mehr]\n\nB.'), answer('A [x2] und mehr.\n\nB.'));
+    expect((await generate(left.client)).letter).toBe('A und mehr.\n\nB.');
+    const failed = clientAnswering(answer('A [x1].\n\n[Optional: mehr]\n\nB.'), new Error('network'));
+    expect((await generate(failed.client)).letter).toBe('A.\n\nB.');
+  });
+
+  it('builds the repair prompt with the profile, the letter and the placeholders', () => {
+    const p = buildRepairPrompt('Text [aa] und [aa] und [bb]', profile);
+    expect(p).toContain('name: Void Example');
+    expect(p).toContain('placeholders: [aa] [bb]');
+    expect(p).toMatch(/no square brackets/);
   });
 });
 
