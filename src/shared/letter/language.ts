@@ -1,5 +1,5 @@
 // Decides whether a letter should be German or English, based on the job ad's own language.
-import type { LetterLanguage } from '../../shared/letter.ts';
+import type { LetterLanguage } from '../letter.ts';
 
 const GERMAN = new Set(
   'der die das und ist mit für wir sie ihr ihre auf eine einen ein zu von bei den dem des sind wird werden oder nicht auch als im über unsere unser du dich dir'.split(' '),

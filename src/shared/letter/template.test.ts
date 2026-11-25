@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { fillTemplate, splitList } from './template.ts';
 import { detectLanguage } from './language.ts';
-import { emptyProfile } from '../../shared/profile.ts';
-import { PLACEHOLDER } from '../../shared/letter.ts';
+import { emptyProfile } from '../profile.ts';
+import { PLACEHOLDER } from '../letter.ts';
 import type { JobDetails } from '../../api/types.ts';
 import detailsFixture from '../../api/fixtures/details.json';
 

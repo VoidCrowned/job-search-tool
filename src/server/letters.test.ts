@@ -9,7 +9,7 @@ import type { JobsucheClient } from '../api/client.ts';
 import type { LetterFile, LetterVersion } from '../shared/letter.ts';
 import detailsFixture from '../api/fixtures/details.json';
 import Anthropic from '@anthropic-ai/sdk';
-import { RefusalError, type LetterGenerator } from './letter/claude.ts';
+import { RefusalError, type LetterGenerator } from '../shared/letter/claude.ts';
 
 const ref = detailsFixture.referenznummer;
 let dir: string;

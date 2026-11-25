@@ -2,14 +2,12 @@ import { Hono } from 'hono';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { createJobsucheClient, JobsucheError, logoUrl, type JobsucheClient } from '../api/client.ts';
 import { parseSearchParams } from '../api/params.ts';
-import { randomUUID } from 'node:crypto';
 import type { JobDetails } from '../api/types.ts';
-import { isLanguageChoice, MAX_LETTER_LENGTH, parseConfirmed, type LetterFile, type LetterLanguage, type LetterVersion } from '../shared/letter.ts';
+import { isLanguageChoice, MAX_LETTER_LENGTH, parseConfirmed, type LetterFile } from '../shared/letter.ts';
 import { parseProfile } from '../shared/profile.ts';
-import { detectLanguage } from './letter/language.ts';
-import { fillTemplate } from './letter/template.ts';
+import { addVersion, letterFileFor, writeLetter, type NewVersion } from '../shared/letter/service.ts';
 import Anthropic from '@anthropic-ai/sdk';
-import { aiConfigFromEnv, createClaudeGenerator, RefusalError, type LetterGenerator } from './letter/claude.ts';
+import { aiConfigFromEnv, createClaudeGenerator, RefusalError, type LetterGenerator } from '../shared/letter/claude.ts';
 import { createStorage, type Storage } from './storage.ts';
 import { updateEnvFile } from './envFile.ts';
 
@@ -150,18 +148,11 @@ export function createApp(options: AppOptions = {}) {
     return c.json(keyStatus());
   });
 
-  const lettersFor = async (refnr: string, job?: JobDetails): Promise<LetterFile> => {
-    const file = (await storage.readLetters(refnr)) ?? { refnr, jobTitle: '', versions: [] };
-    if (job) {
-      file.jobTitle = job.stellenangebotsTitel;
-      file.company = job.firma;
-    }
-    return file;
-  };
+  const lettersFor = async (refnr: string, job?: JobDetails): Promise<LetterFile> =>
+    letterFileFor(refnr, await storage.readLetters(refnr), job);
 
-  const addVersion = async (file: LetterFile, version: Omit<LetterVersion, 'id' | 'createdAt'>) => {
-    const full: LetterVersion = { id: randomUUID(), createdAt: new Date().toISOString(), ...version };
-    file.versions.push(full);
+  const saveVersion = async (file: LetterFile, version: NewVersion) => {
+    const full = addVersion(file, version);
     await storage.writeLetters(file);
     return full;
   };
@@ -186,23 +177,8 @@ export function createApp(options: AppOptions = {}) {
     if (mode === 'ai' && !generator) return c.json({ error: 'No Anthropic API key is set.', code: 'AI_UNAVAILABLE' }, 400);
 
     const [job, profile] = await Promise.all([client.getJobDetails(refnr), storage.readProfile()]);
-    const language: LetterLanguage =
-      choice === 'auto' ? detectLanguage(job.stellenangebotsTitel, job.stellenangebotsBeschreibung) : choice;
     const file = await lettersFor(refnr, job);
-
-    if (mode === 'ai' && generator) {
-      const result = await generator({ profile, job, language, confirmed });
-      const version = await addVersion(file, {
-        source: 'claude',
-        language,
-        text: result.letter,
-        adKeywords: result.adKeywords,
-        missing: result.missing.length ? result.missing : undefined,
-        confirmed: confirmed?.length ? confirmed : undefined,
-      });
-      return c.json({ file, version });
-    }
-    const version = await addVersion(file, { source: 'template', language, text: fillTemplate(profile, job, language) });
+    const version = await saveVersion(file, await writeLetter({ profile, job, language: choice, mode, generator, confirmed }));
     return c.json({ file, version });
   });
 
@@ -215,7 +191,7 @@ export function createApp(options: AppOptions = {}) {
     }
     if (body.language !== 'de' && body.language !== 'en') return c.json({ error: 'Invalid language.' }, 400);
     const file = await lettersFor(refnr);
-    const version = await addVersion(file, { source: 'edit', language: body.language, text: body.text });
+    const version = await saveVersion(file, { source: 'edit', language: body.language, text: body.text });
     return c.json({ file, version });
   });
 

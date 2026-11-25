@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type Anthropic from '@anthropic-ai/sdk';
 import { aiConfigFromEnv, buildPrompt, buildRepairPrompt, createClaudeGenerator, DEFAULT_MODEL, DEFAULT_OPENROUTER_MODEL, parseOutput, RefusalError } from './claude.ts';
-import { emptyProfile } from '../../shared/profile.ts';
+import { emptyProfile } from '../profile.ts';
 import type { JobDetails } from '../../api/types.ts';
 import detailsFixture from '../../api/fixtures/details.json';
 

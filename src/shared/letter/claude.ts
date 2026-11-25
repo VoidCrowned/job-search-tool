@@ -1,8 +1,9 @@
-// Writes application letters with Claude. Runs on the server only; the API key never reaches the browser.
+// Writes application letters with Claude. Shared: the local server uses it with the key from .env; the online
+// version (#10) runs it in the visitor's browser with their own key.
 import Anthropic from '@anthropic-ai/sdk';
 import type { JobDetails } from '../../api/types.ts';
-import { extractPlaceholders, PLACEHOLDER, type LetterLanguage } from '../../shared/letter.ts';
-import { PROFILE_FIELDS, type Profile } from '../../shared/profile.ts';
+import { extractPlaceholders, PLACEHOLDER, type LetterLanguage } from '../letter.ts';
+import { PROFILE_FIELDS, type Profile } from '../profile.ts';
 
 export const DEFAULT_MODEL = 'claude-opus-5-5';
 
@@ -55,7 +56,7 @@ export function isOpenRouterKey(key: string): boolean {
  * Picks the provider from .env: ANTHROPIC_API_KEY (Anthropic directly) or OPENROUTER_API_KEY.
  * An OpenRouter key pasted into ANTHROPIC_API_KEY is recognised by its prefix.
  */
-export function aiConfigFromEnv(env: NodeJS.ProcessEnv = process.env): AiConfig {
+export function aiConfigFromEnv(env: Record<string, string | undefined>): AiConfig {
   const anthropicKey = env.ANTHROPIC_API_KEY?.trim() || undefined;
   const openrouterKey = env.OPENROUTER_API_KEY?.trim() || undefined;
   const orModel = env.OPENROUTER_MODEL?.trim() || DEFAULT_OPENROUTER_MODEL;
