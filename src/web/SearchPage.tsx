@@ -47,8 +47,7 @@ export function SearchPage({ search }: { search: string }) {
 
   return (
     <>
-      {/* Keyed on the URL so the form resets on back/forward navigation. */}
-      <SearchForm key={search} initial={params} />
+      <SearchForm search={search} initial={params} />
       <section aria-live="polite" className="results">
         {result.state === 'idle' && <p className="hint">{t.search.idle}</p>}
         {result.state === 'loading' && <p className="hint">{t.search.loading}</p>}
@@ -60,10 +59,31 @@ export function SearchPage({ search }: { search: string }) {
   );
 }
 
-function SearchForm({ initial }: { initial: SearchParams }) {
+function hasFilters(p: SearchParams) {
+  return Boolean(p.angebotsart || p.arbeitszeit || p.befristung || p.veroeffentlichtseit !== undefined || p.zeitarbeit === false);
+}
+
+function SearchForm({ search, initial }: { search: string; initial: SearchParams }) {
   const t = useT();
   const [draft, setDraft] = useState<SearchParams>(initial);
+  const [filtersOpen, setFiltersOpen] = useState(() => hasFilters(initial));
+  // A new URL (Back/Forward, a link, or our own search) resets the form to it. Not remounted, so focus stays put.
+  const [shownSearch, setShownSearch] = useState(search);
+  if (search !== shownSearch) {
+    setShownSearch(search);
+    setDraft(initial);
+    if (hasFilters(initial)) setFiltersOpen(true);
+  }
+
+  const run = (p: SearchParams) => navigate(`/?${toAppQuery({ ...p, page: 1 })}`);
+  /** Text fields: wait for Enter or the Search button. */
   const set = (patch: Partial<SearchParams>) => setDraft((d) => ({ ...d, ...patch }));
+  /** Dropdowns and checkboxes: search straight away, with whatever is typed in the text fields. */
+  const apply = (patch: Partial<SearchParams>) => {
+    const next = { ...draft, ...patch };
+    setDraft(next);
+    run(next);
+  };
 
   function toggle<T extends string>(list: T[] | undefined, value: T): T[] | undefined {
     const next = list?.includes(value) ? list.filter((v) => v !== value) : [...(list ?? []), value];
@@ -72,12 +92,8 @@ function SearchForm({ initial }: { initial: SearchParams }) {
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    navigate(`/?${toAppQuery({ ...draft, page: 1 })}`);
+    run(draft);
   }
-
-  const filtersActive = Boolean(
-    initial.angebotsart || initial.arbeitszeit || initial.befristung || initial.veroeffentlichtseit !== undefined || initial.zeitarbeit === false,
-  );
 
   return (
     <form className="search-form" onSubmit={submit} role="search">
@@ -99,7 +115,7 @@ function SearchForm({ initial }: { initial: SearchParams }) {
           {t.search.radius}
           <select
             value={draft.umkreis ?? ''}
-            onChange={(e) => set({ umkreis: e.target.value === '' ? undefined : Number(e.target.value) })}
+            onChange={(e) => apply({ umkreis: e.target.value === '' ? undefined : Number(e.target.value) })}
           >
             <option value="">{t.search.radiusDefault}</option>
             {UMKREIS_CHOICES.map((km) => (
@@ -114,14 +130,14 @@ function SearchForm({ initial }: { initial: SearchParams }) {
         </button>
       </div>
 
-      <details className="filters" open={filtersActive}>
+      <details className="filters" open={filtersOpen} onToggle={(e) => setFiltersOpen(e.currentTarget.open)}>
         <summary>{t.search.filters}</summary>
         <div className="row">
           <label>
             {t.search.type}
             <select
               value={draft.angebotsart ?? ''}
-              onChange={(e) => set({ angebotsart: (e.target.value || undefined) as Angebotsart | undefined })}
+              onChange={(e) => apply({ angebotsart: (e.target.value || undefined) as Angebotsart | undefined })}
             >
               <option value="">{t.search.any}</option>
               {ANGEBOTSART.map((value) => (
@@ -135,7 +151,7 @@ function SearchForm({ initial }: { initial: SearchParams }) {
             {t.search.published}
             <select
               value={draft.veroeffentlichtseit ?? ''}
-              onChange={(e) => set({ veroeffentlichtseit: e.target.value === '' ? undefined : Number(e.target.value) })}
+              onChange={(e) => apply({ veroeffentlichtseit: e.target.value === '' ? undefined : Number(e.target.value) })}
             >
               <option value="">{t.search.anyTime}</option>
               {VEROEFFENTLICHTSEIT_CHOICES.map((d) => (
@@ -153,7 +169,7 @@ function SearchForm({ initial }: { initial: SearchParams }) {
               <input
                 type="checkbox"
                 checked={draft.arbeitszeit?.includes(value) ?? false}
-                onChange={() => set({ arbeitszeit: toggle(draft.arbeitszeit, value) })}
+                onChange={() => apply({ arbeitszeit: toggle(draft.arbeitszeit, value) })}
               />
               {t.options.arbeitszeit[value]}
             </label>
@@ -166,7 +182,7 @@ function SearchForm({ initial }: { initial: SearchParams }) {
               <input
                 type="checkbox"
                 checked={draft.befristung?.includes(value) ?? false}
-                onChange={() => set({ befristung: toggle(draft.befristung, value) })}
+                onChange={() => apply({ befristung: toggle(draft.befristung, value) })}
               />
               {t.options.befristung[value]}
             </label>
@@ -176,7 +192,7 @@ function SearchForm({ initial }: { initial: SearchParams }) {
           <input
             type="checkbox"
             checked={draft.zeitarbeit !== false}
-            onChange={(e) => set({ zeitarbeit: e.target.checked ? undefined : false })}
+            onChange={(e) => apply({ zeitarbeit: e.target.checked ? undefined : false })}
           />
           {t.search.includeTempAgencies}
         </label>

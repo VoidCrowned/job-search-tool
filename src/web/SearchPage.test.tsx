@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { App } from './App.tsx';
 import searchFixture from '../api/fixtures/search.json';
 
@@ -46,6 +46,41 @@ describe('search page', () => {
     fireEvent.click(screen.getByText('Search'));
     expect(window.location.search).toBe('?was=Koch&arbeitszeit=tz');
     expect(await screen.findByText(searchFixture.ergebnisliste[0].stellenangebotsTitel)).toBeTruthy();
+  });
+
+  it('applies filters instantly and keeps the typed text', async () => {
+    window.history.replaceState(null, '', '/?was=Pflege');
+    const fetch = mockFetch(searchFixture);
+    render(<App />);
+    await screen.findByText(/3,842 jobs/);
+    fireEvent.change(screen.getByPlaceholderText('Job title, keyword'), { target: { value: 'Koch' } });
+    expect(window.location.search).toBe('?was=Pflege');
+    const partTime = screen.getByLabelText('Part-time');
+    partTime.focus();
+    fireEvent.click(partTime);
+    expect(window.location.search).toBe('?was=Koch&arbeitszeit=tz');
+    expect(document.activeElement).toBe(partTime);
+    expect(screen.getByText('Filters').closest('details')?.open).toBe(true);
+    fireEvent.click(partTime);
+    expect(window.location.search).toBe('?was=Koch');
+    expect(screen.getByText('Filters').closest('details')?.open).toBe(true);
+    fireEvent.change(screen.getByLabelText('Radius'), { target: { value: '10' } });
+    expect(window.location.search).toBe('?was=Koch&umkreis=10');
+    await screen.findByText(/3,842 jobs/);
+    expect((fetch.mock.calls.at(-1) as unknown as [string])[0]).toBe('/api/jobs?was=Koch&umkreis=10');
+  });
+
+  it('resets the form on Back', async () => {
+    window.history.replaceState(null, '', '/?was=Pflege');
+    mockFetch(searchFixture);
+    render(<App />);
+    fireEvent.click(screen.getByLabelText('Part-time'));
+    expect(window.location.search).toBe('?was=Pflege&arbeitszeit=tz');
+    await act(async () => {
+      window.history.replaceState(null, '', '/?was=Pflege');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    expect((screen.getByLabelText('Part-time') as HTMLInputElement).checked).toBe(false);
   });
 
   it('shows server errors', async () => {
