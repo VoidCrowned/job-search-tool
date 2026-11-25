@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { jobPageUrl } from '../api/client.ts';
 import { errorText } from './api.ts';
+import { TextSkeleton } from './Skeleton.tsx';
 import { useT } from './i18n/index.tsx';
 import { JobDetailsView } from './JobDetailsView.tsx';
 import { useJobDetails } from './jobDetails.ts';
@@ -22,7 +23,7 @@ export function JobPage({ refnr }: { refnr: string }) {
       <a href={appHref(lastSearchHref())} onClick={onLinkClick} className="back">
         {t.job.back}
       </a>
-      {result.state === 'loading' && <p className="hint">{t.job.loading}</p>}
+      {result.state === 'loading' && <TextSkeleton label={t.job.loading} lines={10} />}
       {result.state === 'error' && (
         <p className="error">
           {errorText(result.error, t)}{' '}

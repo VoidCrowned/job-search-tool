@@ -16,6 +16,7 @@ import {
 import type { JobSearchItem, SearchResponse } from '../api/types.ts';
 import { errorText, useLoad } from './api.ts';
 import { backend } from './backend/index.ts';
+import { ResultsSkeleton, TextSkeleton } from './Skeleton.tsx';
 import { formatDate, formatNumber, formatPay, formatPlace } from './format.ts';
 import { useT } from './i18n/index.tsx';
 import { JobDetailsView } from './JobDetailsView.tsx';
@@ -56,7 +57,7 @@ export function SearchPage({ search }: { search: string }) {
       <SearchForm search={search} initial={params} />
       <section aria-live="polite" className="results">
         {result.state === 'idle' && <p className="hint">{t.search.idle}</p>}
-        {result.state === 'loading' && <p className="hint">{t.search.loading}</p>}
+        {result.state === 'loading' && <ResultsSkeleton label={t.search.loading} />}
         {result.state === 'error' && <p className="error">{errorText(result.error, t)}</p>}
         {/* Keyed on the query so expanded cards reset for a new search or page. */}
         {result.state === 'done' && <Results key={query} query={query} data={result.data} params={params} />}
@@ -324,23 +325,28 @@ function JobCard({ job, expanded, onToggle }: { job: JobSearchItem; expanded: bo
 
   return (
     <li className={expanded ? 'job-card expanded' : 'job-card'} id={cardId(job.referenznummer)}>
-      <a className="job-title" href={href} onClick={onTitleClick} aria-expanded={expanded} aria-controls={bodyId}>
-        {job.stellenangebotsTitel}
-      </a>
-      <div className="job-meta">
-        {job.firma && <span className="company">{job.firma}</span>}
-        {place && (
-          <span>
-            {place}
-            {job.entfernung ? ` · ${t.search.km(job.entfernung)}` : ''}
-          </span>
-        )}
-        {published && <span>{t.card.publishedOn(published)}</span>}
-      </div>
-      <div className="badges">
-        {job.homeofficemoeglich && <span className="badge">{t.card.homeOffice}</span>}
-        {pay && <span className="badge">{pay}</span>}
-        {job.externeURL && <span className="badge muted">{t.card.externalAd}</span>}
+      <div className="card-head">
+        <CardLogo hash={job.arbeitgeberKundennummerHash} company={job.firma} />
+        <div className="card-text">
+          <a className="job-title" href={href} onClick={onTitleClick} aria-expanded={expanded} aria-controls={bodyId}>
+            {job.stellenangebotsTitel}
+          </a>
+          {job.firma && <div className="company">{job.firma}</div>}
+          <div className="job-meta">
+            {place && (
+              <span>
+                {place}
+                {job.entfernung ? ` · ${t.search.km(job.entfernung)}` : ''}
+              </span>
+            )}
+            {published && <span>{t.card.publishedOn(published)}</span>}
+          </div>
+          <div className="badges">
+            {job.homeofficemoeglich && <span className="badge">{t.card.homeOffice}</span>}
+            {pay && <span className="badge">{pay}</span>}
+            {job.externeURL && <span className="badge muted">{t.card.externalAd}</span>}
+          </div>
+        </div>
       </div>
       {expanded && (
         <div className="job-body" id={bodyId}>
@@ -364,10 +370,26 @@ function JobCard({ job, expanded, onToggle }: { job: JobSearchItem; expanded: bo
   );
 }
 
+/**
+ * The employer's logo, small, on the left of a card. Many employers have none (or it fails to load): then a
+ * tile with the company's first letter keeps the cards lined up. Decorative, since the company is named.
+ */
+function CardLogo({ hash, company }: { hash?: string; company?: string }) {
+  const [failed, setFailed] = useState(false);
+  if (hash && !failed) {
+    return <img className="card-logo" src={backend.logoUrl(hash)} alt="" loading="lazy" onError={() => setFailed(true)} />;
+  }
+  return (
+    <span className="card-logo card-logo-letter" aria-hidden="true">
+      {company?.trim().charAt(0).toUpperCase() || '·'}
+    </span>
+  );
+}
+
 function CardDetails({ refnr }: { refnr: string }) {
   const t = useT();
   const result = useJobDetails(refnr);
   if (result.state === 'error') return <p className="error">{errorText(result.error, t)}</p>;
-  if (result.state !== 'done') return <p className="hint">{t.job.loading}</p>;
+  if (result.state !== 'done') return <TextSkeleton label={t.job.loading} />;
   return <JobDetailsView job={result.data} compact />;
 }

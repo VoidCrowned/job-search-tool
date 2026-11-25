@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { App } from './App.tsx';
 import searchFixture from '../api/fixtures/search.json';
 
@@ -109,6 +109,31 @@ describe('search page', () => {
     expect((screen.getByLabelText('Part-time') as HTMLInputElement).checked).toBe(false);
   });
 
+  it('shows placeholder cards while searching, then logos or letter tiles', async () => {
+    window.history.replaceState(null, '', '/?was=Pflege');
+    let answer: (r: Response) => void = () => {};
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>((resolve) => (answer = resolve))));
+    render(<App />);
+    const status = await screen.findByRole('status');
+    expect(status.textContent).toContain('Searching…');
+    expect(status.querySelectorAll('.skeleton-card')).toHaveLength(5);
+    await act(async () => answer(new Response(JSON.stringify(searchFixture), { headers: { 'Content-Type': 'application/json' } })));
+    await screen.findByText(searchFixture.ergebnisliste[0].stellenangebotsTitel);
+    expect(screen.queryByRole('status')).toBeNull();
+    const cards = [...document.querySelectorAll('.job-card')];
+    expect(cards).toHaveLength(searchFixture.ergebnisliste.length);
+    searchFixture.ergebnisliste.forEach((job, i) => {
+      const logo = cards[i].querySelector('.card-logo')!;
+      if (job.arbeitgeberKundennummerHash) expect(logo.tagName).toBe('IMG');
+      else expect(logo.textContent).toBe(job.firma.charAt(0).toUpperCase());
+    });
+    const img = cards.map((c) => c.querySelector('img.card-logo')).find(Boolean);
+    if (img) {
+      fireEvent.error(img);
+      expect(img.isConnected).toBe(false);
+    }
+  });
+
   it('shows server errors', async () => {
     window.history.replaceState(null, '', '/?was=x');
     mockFetch({ error: 'The Jobsuche API could not be reached.' }, 502);
@@ -121,12 +146,35 @@ describe('search page', () => {
     mockFetch(searchFixture);
     render(<App />);
     await screen.findByText(/3,842 jobs/);
-    fireEvent.change(screen.getByLabelText('Language'), { target: { value: 'de' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Language: English' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Deutsch' }));
     expect(screen.getByText(/3\.842 Jobs bei Hamburg/)).toBeTruthy();
     expect(screen.getByText('Suchen')).toBeTruthy();
     expect(screen.getByText('Weiter →')).toBeTruthy();
     expect(document.documentElement.lang).toBe('de');
     expect(localStorage.getItem('jobsuche:lang')).toBe('de');
+  });
+
+  it('language list: flags with names, keyboard, Escape and click outside', () => {
+    mockFetch(searchFixture);
+    render(<App />);
+    const button = screen.getByRole('button', { name: 'Language: English' });
+    expect(button.querySelector('svg.flag')).toBeTruthy();
+    fireEvent.keyDown(button, { key: 'ArrowDown' });
+    const list = screen.getByRole('listbox', { name: 'Language' });
+    expect(within(list).getAllByRole('option').map((o) => o.textContent)).toEqual(['Deutsch', 'English', 'Español']);
+    expect(within(list).getByRole('option', { name: 'English' }).getAttribute('aria-selected')).toBe('true');
+    expect(within(list).getAllByRole('option').every((o) => o.querySelector('svg.flag'))).toBe(true);
+    fireEvent.keyDown(list, { key: 'ArrowDown' });
+    fireEvent.keyDown(list, { key: 'Enter' });
+    expect(screen.getByRole('button', { name: 'Idioma: Español' })).toBeTruthy();
+    expect(screen.queryByRole('listbox')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Idioma: Español' }));
+    fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Escape' });
+    expect(screen.queryByRole('listbox')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Idioma: Español' }));
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByRole('listbox')).toBeNull();
   });
 
   it('starts in the saved language', () => {

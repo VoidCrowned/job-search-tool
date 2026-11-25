@@ -1,5 +1,6 @@
 // Display language: provider, hook and language detection.
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { FlagDE, FlagES, FlagGB } from '../icons.tsx';
 import { de } from './de.ts';
 import { en, type Messages } from './en.ts';
 import { es } from './es.ts';
@@ -65,18 +66,109 @@ export function useT(): Messages {
   return useContext(I18nContext).t;
 }
 
+const FLAGS: Record<Lang, () => ReactNode> = { de: FlagDE, en: FlagGB, es: FlagES };
+const ORDER: Lang[] = ['de', 'en', 'es'];
+
+/**
+ * Language switch: a button with flag and name that opens a short list. A native <select> can't show images
+ * in its options, so this is a small listbox (arrow keys, Enter, Escape, click outside all work).
+ */
 export function LanguageSelect() {
   const { lang, t, setLang } = useI18n();
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(lang);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const Flag = FLAGS[lang];
+
+  useEffect(() => {
+    if (!open) return;
+    listRef.current?.focus();
+    const close = (e: MouseEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+
+  const openList = () => {
+    setActive(lang);
+    setOpen(true);
+  };
+  const choose = (next: Lang) => {
+    setLang(next);
+    setOpen(false);
+    buttonRef.current?.focus();
+  };
+  const onListKey = (e: React.KeyboardEvent) => {
+    const i = ORDER.indexOf(active);
+    if (e.key === 'ArrowDown') setActive(ORDER[(i + 1) % ORDER.length]);
+    else if (e.key === 'ArrowUp') setActive(ORDER[(i + ORDER.length - 1) % ORDER.length]);
+    else if (e.key === 'Home') setActive(ORDER[0]);
+    else if (e.key === 'End') setActive(ORDER[ORDER.length - 1]);
+    else if (e.key === 'Enter' || e.key === ' ') choose(active);
+    else if (e.key === 'Escape' || e.key === 'Tab') {
+      setOpen(false);
+      if (e.key === 'Escape') buttonRef.current?.focus();
+      return;
+    } else return;
+    e.preventDefault();
+  };
+
   return (
-    <label className="header-control">
-      <span className="visually-hidden">{t.app.language}</span>
-      <select value={lang} onChange={(e) => setLang(e.target.value as Lang)} aria-label={t.app.language}>
-        {Object.entries(LANGUAGES).map(([code, m]) => (
-          <option key={code} value={code}>
-            {m.langName}
-          </option>
-        ))}
-      </select>
-    </label>
+    <div className="lang-select" ref={rootRef}>
+      <button
+        ref={buttonRef}
+        type="button"
+        className="switch-button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={`${t.app.language}: ${LANGUAGES[lang].langName}`}
+        onClick={() => (open ? setOpen(false) : openList())}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            openList();
+          }
+        }}
+      >
+        <Flag />
+        <span>{LANGUAGES[lang].langName}</span>
+        <span className="caret" aria-hidden="true">
+          ▾
+        </span>
+      </button>
+      {open && (
+        <ul
+          ref={listRef}
+          className="lang-list"
+          role="listbox"
+          tabIndex={-1}
+          aria-label={t.app.language}
+          aria-activedescendant={`lang-option-${active}`}
+          onKeyDown={onListKey}
+        >
+          {ORDER.map((code) => {
+            const OptionFlag = FLAGS[code];
+            return (
+              <li
+                key={code}
+                id={`lang-option-${code}`}
+                role="option"
+                aria-selected={code === lang}
+                className={code === active ? 'active' : undefined}
+                onMouseEnter={() => setActive(code)}
+                onClick={() => choose(code)}
+                lang={code}
+              >
+                <OptionFlag />
+                <span>{LANGUAGES[code].langName}</span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }

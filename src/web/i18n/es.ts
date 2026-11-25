@@ -109,7 +109,7 @@ export const es: Messages = {
     saved: 'Guardado.',
     unsaved: 'Cambios sin guardar',
     copy: 'Copiar',
-    copied: 'Copiado.',
+    copied: 'Copiado',
     copyFailed: 'No se ha podido copiar. Selecciona el texto y pulsa Ctrl+C.',
     replaceConfirm: '¿Sustituir tus cambios sin guardar por una carta nueva?',
     leftOut: 'No está en tu perfil, así que Claude lo ha dejado fuera de la carta. Añádelo tú si corresponde:',

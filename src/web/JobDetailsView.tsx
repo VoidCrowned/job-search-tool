@@ -90,9 +90,6 @@ export function JobDetailsView({
       )}
 
       <div className="actions">
-        {compact && job.arbeitgeberKundennummerHash && (
-          <Logo hash={job.arbeitgeberKundennummerHash} alt={t.job.logoAlt(job.firma)} small />
-        )}
         {job.externeURL && externalHost && (
           <a className="button primary" href={job.externeURL} target="_blank" rel="noopener noreferrer">
             {t.job.fullAdOn(externalHost)}

@@ -4,6 +4,8 @@ import exampleProfile from '../../examples/profile.example.json';
 import { isProfileEmpty, MAX_LENGTH, MULTILINE_FIELDS, parseProfile, type Profile, type ProfileField } from '../shared/profile.ts';
 import { errorText, RequestError, useLoad } from './api.ts';
 import { backend, isHosted, type KeyStatus } from './backend/index.ts';
+import { TextSkeleton } from './Skeleton.tsx';
+import { StableLabel } from './StableLabel.tsx';
 import { useT } from './i18n/index.tsx';
 
 const SECTIONS: { key: 'personal' | 'goals' | 'cv'; fields: ProfileField[] }[] = [
@@ -26,7 +28,7 @@ export function ProfilePage() {
     <article className="profile-page">
       <h1>{t.profile.title}</h1>
       <p className="hint">{isHosted ? t.profile.introOnline : t.profile.intro}</p>
-      {result.state === 'loading' && <p className="hint">{t.profile.loading}</p>}
+      {result.state === 'loading' && <TextSkeleton label={t.profile.loading} lines={8} />}
       {result.state === 'error' && <p className="error">{errorText(result.error, t)}</p>}
       <KeySettings key={`key:${generation}`} />
       {result.state === 'done' && <ProfileForm key={generation} initial={result.data} />}
@@ -128,22 +130,6 @@ function KeySettings() {
         </div>
       </fieldset>
     </form>
-  );
-}
-
-/**
- * A button label that switches text without changing the button's size: every label takes up the same
- * grid cell, and only the one shown is visible. So the widest label sets the width.
- */
-function StableLabel({ labels, show }: { labels: string[]; show: number }) {
-  return (
-    <span className="stable-label">
-      {labels.map((label, i) => (
-        <span key={i} aria-hidden={i !== show} className={i === show ? undefined : 'stable-label-hidden'}>
-          {label}
-        </span>
-      ))}
-    </span>
   );
 }
 
