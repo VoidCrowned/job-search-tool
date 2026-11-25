@@ -83,15 +83,18 @@ describe('returning to the results', () => {
     expect(isOpen(first.stellenangebotsTitel)).toBe(false);
   });
 
-  it('"Job search" in the header shows the same search at the top, with cards closed', async () => {
+  it('"Job search" in the header shows the same search with the same cards open, but at the top', async () => {
     await openTwoCardsAndLeave();
     fireEvent.click(screen.getByText('Profile'));
     await screen.findByRole('heading', { level: 1, name: 'My profile' });
     fireEvent.click(screen.getByText('Job search'));
     await screen.findByText(first.stellenangebotsTitel);
     expect(window.location.search).toBe('?was=Pflege&wo=Hamburg');
-    expect(isOpen(first.stellenangebotsTitel)).toBe(false);
+    expect(isOpen(first.stellenangebotsTitel)).toBe(true);
+    expect(isOpen(second.stellenangebotsTitel)).toBe(true);
+    expect(isOpen(searchFixture.ergebnisliste[2].stellenangebotsTitel)).toBe(false);
     expect(window.scrollY).toBe(0);
+    expect(scroll).not.toHaveBeenCalledWith(0, 1234);
   });
 
   it('"Job search" on the search page itself scrolls to the top', async () => {

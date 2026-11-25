@@ -28,6 +28,16 @@ export function readResultsView(query: string): ResultsView | undefined {
   return undefined;
 }
 
+/** Keeps the saved open cards but forgets the scroll position, so the list comes back at the top. */
+export function resetResultsScroll() {
+  try {
+    const raw = sessionStorage.getItem(KEY);
+    if (raw) sessionStorage.setItem(KEY, JSON.stringify({ ...(JSON.parse(raw) as ResultsView), scrollY: 0 }));
+  } catch {
+    // Unreadable: the list just starts fresh.
+  }
+}
+
 export function clearResultsView() {
   try {
     sessionStorage.removeItem(KEY);
