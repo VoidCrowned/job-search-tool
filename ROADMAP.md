@@ -29,6 +29,13 @@
 - [x] Tick left-out points and regenerate (#56)
 - [x] API key entry on the profile page (#58)
 
+## M4: Online version (#10)
+- [x] Backend interface in the web app (#71)
+- [x] Letter logic runnable in the browser (#72)
+- [x] Job-search relay (Cloudflare Worker) (#73)
+- [x] Browser backend: data and key in the browser (#74)
+- [x] Export and import all data (#75)
+- [ ] Deploy the online version (#76)
+
 ## Later
-- [ ] Hosting without exposing keys (#10)
 - [ ] More display languages (#18)

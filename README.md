@@ -1,6 +1,6 @@
 # job-search-tool
 
-My local tool for searching job ads from the Bundesagentur für Arbeit (via the [Jobsuche API](https://github.com/bundesAPI/jobsuche-api)) and writing application letters for them.
+My tool for searching job ads from the Bundesagentur für Arbeit (via the [Jobsuche API](https://github.com/bundesAPI/jobsuche-api)) and writing application letters for them. It runs on your own computer, or online at https://voidcrowned.github.io/job-search-tool/.
 
 ## Run it
 
@@ -26,6 +26,12 @@ Without an API key, you get a template filled from your profile. With a key from
 You can also put it into `.env` yourself (see `.env.example`) and restart `npm run dev`.
 
 Each letter costs about 8 cents with the default model (Claude Opus 5.5). `npm run letter:check -- --ai` tests the setup with one fictional letter. Through OpenRouter, the automatic retry on another model after a refusal isn't available.
+
+## Online version
+
+The online version is the same website, but everything personal stays in your browser: profile, letters and your API key (sent only to OpenRouter or Anthropic when Claude writes). Job searches go through a small relay on Cloudflare (`worker/`), because the Jobsuche API can't be called from a browser directly. Use **Profile → Backup → Export** to keep a copy of your data.
+
+It is deployed by `.github/workflows/deploy.yml` on every push to `main`, once the repository variable `ONLINE` is `true` and the secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` are set. The optional variable `IMPRINT` adds an imprint to the privacy page.
 
 ## Checks
 

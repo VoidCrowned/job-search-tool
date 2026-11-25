@@ -12,7 +12,22 @@ export const es: Messages = {
     backToSearch: 'Volver a la búsqueda',
     profile: 'Perfil',
     dataSource: 'Datos:',
+    staysInBrowser: 'Tu clave, perfil y cartas se quedan en este navegador.',
+    privacy: 'Privacidad',
     pageTitle: (what) => (what ? `${what} · Jobsuche` : 'Jobsuche'),
+  },
+
+  about: {
+    title: 'Privacidad',
+    whereTitle: 'Qué va a dónde',
+    where: [
+      'Las búsquedas pasan por un pequeño relé en Cloudflare hacia la Bundesagentur für Arbeit, porque su API no se puede llamar directamente desde el navegador. El relé no guarda nada ni lleva registros.',
+      'Tu perfil, tus cartas y tu clave de API se guardan solo en este navegador (IndexedDB y localStorage). Nada se me envía ni se guarda en un servidor.',
+      'Cuando Claude escribe una carta, tu perfil y la oferta van directamente de tu navegador a OpenRouter o Anthropic, con tu propia clave. Se aplican sus políticas de privacidad.',
+      'Este sitio se sirve desde GitHub Pages; GitHub puede registrar datos técnicos de acceso como direcciones IP.',
+    ],
+    noTracking: 'Sin cookies, sin estadísticas, sin seguimiento. Usa Exportar en la página de perfil para guardar una copia; borrar los datos del navegador los elimina.',
+    imprintTitle: 'Aviso legal',
   },
 
   profile: {
