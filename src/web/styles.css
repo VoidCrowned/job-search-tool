@@ -97,8 +97,10 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .theme-switch button { display: flex; align-items: center; justify-content: center; width: 2rem; border: 0; border-radius: 4px; background: none; color: var(--muted); cursor: pointer; }
 .theme-switch button:hover { color: var(--text); }
 .theme-switch button[aria-checked='true'] { background: var(--badge); color: var(--text); }
+/* Only the icon (its stroke) takes the colour; the highlight behind it stays the same. */
 .theme-switch button[data-theme-option='light'][aria-checked='true'] { color: #ff9900; }
-.theme-switch button[data-theme-option='dark'][aria-checked='true'] { color: #7c6abf; }
+.theme-switch button[data-theme-option='dark'][aria-checked='true'] { color: #8372fd; }
+.theme-switch button[data-theme-option='system'][aria-checked='true'] { color: #bbb1fe; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .site-nav { display: flex; align-items: baseline; gap: var(--space-2); font-size: var(--text-xl); }
 .nav-link { text-decoration: none; color: var(--muted); font-weight: 600; }
