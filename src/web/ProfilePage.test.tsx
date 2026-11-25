@@ -1,9 +1,13 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { App } from './App.tsx';
 import { emptyProfile, parseProfile } from '../shared/profile.ts';
 import exampleProfile from '../../examples/profile.example.json';
+
+const saveButton = () => document.querySelector<HTMLButtonElement>('.profile-form .form-actions button')!;
+/** The label a button shows (StableLabel keeps the others in the DOM, invisible, to fix the size). */
+const visibleLabel = (el: Element) => el.querySelector('.stable-label > span:not(.stable-label-hidden)')?.textContent;
 
 let stored = { ...emptyProfile(), name: 'Void', cv: 'Old CV' };
 let fetchMock: ReturnType<typeof vi.fn>;
@@ -34,21 +38,29 @@ describe('profile page', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'My profile' })).toBeTruthy();
   });
 
-  it('marks unsaved changes and saves them', async () => {
+  it('shows "Saved" on the button until the form differs from the saved data', async () => {
     render(<App />);
-    fireEvent.change(await screen.findByLabelText('Town'), { target: { value: 'Hamburg' } });
-    expect(screen.getByText('Unsaved changes')).toBeTruthy();
-    fireEvent.click(screen.getByText('Save profile'));
-    expect(await screen.findByText('Saved.')).toBeTruthy();
+    const town = (await screen.findByLabelText('Town')) as HTMLInputElement;
+    expect(saveButton()).toMatchObject({ disabled: true });
+    expect(visibleLabel(saveButton())).toBe('Saved');
+    fireEvent.change(town, { target: { value: 'Hamburg' } });
+    expect(saveButton()).toMatchObject({ disabled: false });
+    expect(visibleLabel(saveButton())).toBe('Save profile');
+    fireEvent.change(town, { target: { value: '' } });
+    expect(visibleLabel(saveButton())).toBe('Saved');
+    fireEvent.change(town, { target: { value: 'Hamburg' } });
+    fireEvent.click(saveButton());
+    await waitFor(() => expect(visibleLabel(saveButton())).toBe('Saved'));
+    expect(saveButton().disabled).toBe(true);
     const put = fetchMock.mock.calls.find(([, init]) => (init as RequestInit | undefined)?.method === 'PUT');
     expect(JSON.parse((put![1] as RequestInit).body as string)).toMatchObject({ name: 'Void', city: 'Hamburg' });
   });
 
   it('shows save errors', async () => {
     render(<App />);
-    await screen.findByLabelText('Full name');
+    fireEvent.change(await screen.findByLabelText('Town'), { target: { value: 'Hamburg' } });
     fetchMock.mockImplementationOnce(async () => new Response(JSON.stringify({ error: 'Invalid profile.' }), { status: 400 }));
-    fireEvent.click(screen.getByText('Save profile'));
+    fireEvent.click(saveButton());
     expect(await screen.findByText('Some values are invalid.')).toBeTruthy();
   });
 
@@ -98,7 +110,7 @@ describe('profile page', () => {
     expect((screen.getByLabelText('Town') as HTMLInputElement).value).toBe('Hamburg');
   });
 
-  it('saves and removes the API key without ever showing it', async () => {
+  it('saves and removes the API key, showing only its hint', async () => {
     let keyStatus: Record<string, unknown> = { set: false };
     const keyCalls: { method: string; body?: string }[] = [];
     fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
@@ -113,19 +125,32 @@ describe('profile page', () => {
     });
     vi.stubGlobal('confirm', () => true);
     render(<App />);
-    expect(await screen.findByText(/No key set/)).toBeTruthy();
-    const input = screen.getByLabelText('API key') as HTMLInputElement;
+    const input = (await screen.findByLabelText('API key')) as HTMLInputElement;
+    const keyButton = () => document.querySelector<HTMLButtonElement>('.key-actions button[type=submit]')!;
+    await waitFor(() => expect(input.placeholder).toBe('sk-or-…'));
     expect(input.type).toBe('password');
-    const save = screen.getByText('Save key') as HTMLButtonElement;
-    expect(save.disabled).toBe(true);
+    expect(keyButton().disabled).toBe(true);
+    expect(visibleLabel(keyButton())).toBe('Save key');
+
     fireEvent.change(input, { target: { value: 'sk-or-v1-secret0123456789WXYZ' } });
-    fireEvent.click(save);
-    expect(await screen.findByText('Key set: OpenRouter (sk-or-…WXYZ).')).toBeTruthy();
-    expect(screen.getByText(/Key saved/)).toBeTruthy();
-    expect((screen.getByLabelText('Replace with a new key') as HTMLInputElement).value).toBe('');
-    expect(document.body.textContent).not.toContain('secret0123456789');
+    fireEvent.click(screen.getByLabelText('Show key'));
+    expect(input.type).toBe('text');
+    fireEvent.click(screen.getByLabelText('Hide key'));
+    expect(input.type).toBe('password');
+    fireEvent.click(keyButton());
+
+    await waitFor(() => expect(input.placeholder).toBe('sk-or-…WXYZ'));
+    expect(input.value).toBe('');
+    expect(keyButton().disabled).toBe(true);
+    expect(visibleLabel(keyButton())).toBe('Key set');
+    expect(screen.queryByText(/Key set: OpenRouter/)).toBeNull();
+    fireEvent.change(input, { target: { value: 'sk-or-v1-other' } });
+    expect(visibleLabel(keyButton())).toBe('Save key');
+    fireEvent.change(input, { target: { value: '' } });
+
     fireEvent.click(screen.getByText('Remove key'));
     expect(await screen.findByText('Key removed.')).toBeTruthy();
+    expect(input.placeholder).toBe('sk-or-…');
     expect(keyCalls).toEqual([
       { method: 'PUT', body: JSON.stringify({ key: 'sk-or-v1-secret0123456789WXYZ' }) },
       { method: 'DELETE', body: undefined },
