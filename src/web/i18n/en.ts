@@ -20,9 +20,11 @@ export const en = {
   profile: {
     title: 'My profile',
     intro: 'Used to write application letters. Saved only on this computer, in data/profile.json.',
+    introOnline: 'Used to write application letters. Saved only in this browser, on this device. Use Export to keep a copy.',
     key: {
       title: 'Claude API key',
       intro: 'Lets Claude write your letters. Get an OpenRouter key at openrouter.ai/settings/keys (or an Anthropic key). It is saved only on this computer, in the .env file, never in your profile or the browser.',
+      introOnline: 'Lets Claude write your letters. Get an OpenRouter key at openrouter.ai/settings/keys (or an Anthropic key). It is saved only in this browser and sent only to OpenRouter or Anthropic when you write a letter. You pay them directly.',
       label: 'API key',
       save: 'Save key',
       isSetButton: 'Key set',

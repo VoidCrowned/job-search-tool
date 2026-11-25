@@ -18,9 +18,11 @@ export const de: Messages = {
   profile: {
     title: 'Mein Profil',
     intro: 'Wird für Bewerbungsschreiben verwendet. Nur auf diesem Computer gespeichert, in data/profile.json.',
+    introOnline: 'Wird für Bewerbungsschreiben verwendet. Nur in diesem Browser auf diesem Gerät gespeichert. Mit Exportieren behältst du eine Kopie.',
     key: {
       title: 'Claude-API-Schlüssel',
       intro: 'Damit schreibt Claude deine Anschreiben. Einen OpenRouter-Schlüssel bekommst du unter openrouter.ai/settings/keys (oder einen Anthropic-Schlüssel). Er wird nur auf diesem Computer gespeichert, in der Datei .env, nie im Profil oder im Browser.',
+      introOnline: 'Damit schreibt Claude deine Anschreiben. Einen OpenRouter-Schlüssel bekommst du unter openrouter.ai/settings/keys (oder einen Anthropic-Schlüssel). Er wird nur in diesem Browser gespeichert und nur beim Schreiben an OpenRouter oder Anthropic geschickt. Du bezahlst sie direkt.',
       label: 'API-Schlüssel',
       save: 'Schlüssel speichern',
       isSetButton: 'Schlüssel gespeichert',

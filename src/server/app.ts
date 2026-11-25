@@ -1,15 +1,17 @@
 import { Hono } from 'hono';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
-import { createJobsucheClient, JobsucheError, logoUrl, type JobsucheClient } from '../api/client.ts';
+import { createJobsucheClient, logoUrl, type JobsucheClient } from '../api/client.ts';
 import { parseSearchParams } from '../api/params.ts';
 import type { JobDetails } from '../api/types.ts';
 import { isLanguageChoice, MAX_LETTER_LENGTH, parseConfirmed, type LetterFile } from '../shared/letter.ts';
 import { parseProfile } from '../shared/profile.ts';
 import { addVersion, letterFileFor, writeLetter, type NewVersion } from '../shared/letter/service.ts';
 import Anthropic from '@anthropic-ai/sdk';
-import { aiConfigFromEnv, createClaudeGenerator, RefusalError, type LetterGenerator } from '../shared/letter/claude.ts';
+import { aiConfigFromEnv, createClaudeGenerator, type LetterGenerator } from '../shared/letter/claude.ts';
 import { createStorage, type Storage } from './storage.ts';
 import { updateEnvFile } from './envFile.ts';
+import { isValidApiKey, keyHint } from '../shared/apiKey.ts';
+import { describeError } from '../shared/errors.ts';
 
 export interface AppOptions {
   client?: JobsucheClient;
@@ -28,10 +30,6 @@ export interface AppOptions {
 }
 
 const KEY_VARS = ['ANTHROPIC_API_KEY', 'OPENROUTER_API_KEY'] as const;
-/** OpenRouter ("sk-or-…") or Anthropic ("sk-ant-…") keys; one line, no spaces or quotes. */
-const API_KEY = /^sk-(or|ant)-[A-Za-z0-9_-]{16,250}$/;
-/** Enough of the key to recognise it, never enough to use it. */
-const keyHint = (key: string) => `${key.slice(0, key.startsWith('sk-ant-') ? 7 : 6)}…${key.slice(-4)}`;
 /** Origins of pages allowed to change things: the app itself (dev server or built site), never another website. */
 const isLocalOrigin = (origin: string) => {
   try {
@@ -95,24 +93,13 @@ export function createApp(options: AppOptions = {}) {
   });
 
   app.onError((err, c) => {
-    if (err instanceof RefusalError) return c.json({ error: err.message, code: 'AI_REFUSED' }, 422);
-    if (err instanceof Anthropic.AuthenticationError || err instanceof Anthropic.PermissionDeniedError) {
-      return c.json({ error: 'The API key was rejected.', code: 'AI_AUTH' }, 502);
+    const info = describeError(err);
+    if (info.code === 'AI_ERROR' && err instanceof Anthropic.APIError) console.error('Anthropic API error', err.status, err.message);
+    if (info.status === 500) {
+      console.error(err);
+      return c.json({ error: 'Unexpected server error.' }, 500);
     }
-    if (err instanceof Anthropic.RateLimitError) {
-      return c.json({ error: 'Anthropic rate limit reached.', code: 'AI_RATE_LIMIT' }, 503);
-    }
-    if (err instanceof Anthropic.APIError) {
-      console.error('Anthropic API error', err.status, err.message);
-      return c.json({ error: 'Claude could not write the letter.', code: 'AI_ERROR' }, 502);
-    }
-    if (err instanceof JobsucheError) {
-      // Pass 400/404 through; anything else is the upstream API's fault.
-      const status = (err.status === 400 || err.status === 404 ? err.status : 502) as ContentfulStatusCode;
-      return c.json({ error: err.message, code: err.code }, status);
-    }
-    console.error(err);
-    return c.json({ error: 'Unexpected server error.' }, 500);
+    return c.json(info.code ? { error: info.message, code: info.code } : { error: info.message }, info.status as ContentfulStatusCode);
   });
 
   app.get('/api/health', (c) => c.json({ ok: true }));
@@ -138,7 +125,7 @@ export function createApp(options: AppOptions = {}) {
   app.put('/api/settings/key', async (c) => {
     const body = (await c.req.json().catch(() => ({}))) as { key?: unknown };
     const key = typeof body.key === 'string' ? body.key.trim() : '';
-    if (!API_KEY.test(key)) return c.json({ error: 'That does not look like an OpenRouter (sk-or-…) or Anthropic (sk-ant-…) key.', code: 'INVALID_KEY' }, 400);
+    if (!isValidApiKey(key)) return c.json({ error: 'That does not look like an OpenRouter (sk-or-…) or Anthropic (sk-ant-…) key.', code: 'INVALID_KEY' }, 400);
     await setKey(key);
     return c.json(keyStatus());
   });

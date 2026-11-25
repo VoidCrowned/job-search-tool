@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import exampleProfile from '../../examples/profile.example.json';
 import { isProfileEmpty, MAX_LENGTH, MULTILINE_FIELDS, parseProfile, type Profile, type ProfileField } from '../shared/profile.ts';
 import { errorText, RequestError, useLoad } from './api.ts';
-import { backend, type KeyStatus } from './backend/index.ts';
+import { backend, isHosted, type KeyStatus } from './backend/index.ts';
 import { useT } from './i18n/index.tsx';
 
 const SECTIONS: { key: 'personal' | 'goals' | 'cv'; fields: ProfileField[] }[] = [
@@ -22,7 +22,7 @@ export function ProfilePage() {
   return (
     <article className="profile-page">
       <h1>{t.profile.title}</h1>
-      <p className="hint">{t.profile.intro}</p>
+      <p className="hint">{isHosted ? t.profile.introOnline : t.profile.intro}</p>
       {result.state === 'loading' && <p className="hint">{t.profile.loading}</p>}
       {result.state === 'error' && <p className="error">{errorText(result.error, t)}</p>}
       <KeySettings />
@@ -80,7 +80,7 @@ function KeySettings() {
       <fieldset className="profile-section key-section">
         <legend>{t.profile.key.title}</legend>
         <div className="key-info">
-          <p className="hint">{t.profile.key.intro}</p>
+          <p className="hint">{isHosted ? t.profile.key.introOnline : t.profile.key.intro}</p>
         </div>
         <div className="key-entry">
           <div className="profile-field">
