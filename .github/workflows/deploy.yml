@@ -35,6 +35,8 @@ jobs:
         run: echo "url=${{ vars.RELAY_URL || steps.deploy.outputs.deployment-url }}" >> "$GITHUB_OUTPUT"
       - name: Live relay check (JSON)
         run: npm run -s relay:check -- "${{ steps.url.outputs.url }}" https://voidcrowned.github.io
+      - name: Browser may call OpenRouter and Anthropic (CORS, JSON)
+        run: npm run -s cors:check -- https://voidcrowned.github.io
 
   pages:
     needs: relay

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type Anthropic from '@anthropic-ai/sdk';
-import { aiConfigFromEnv, buildPrompt, buildRepairPrompt, createClaudeGenerator, DEFAULT_MODEL, DEFAULT_OPENROUTER_MODEL, parseOutput, RefusalError } from './claude.ts';
+import { aiConfigFromEnv, buildPrompt, buildRepairPrompt, createClient, OPENROUTER_BROWSER_DROPPED_HEADERS, createClaudeGenerator, DEFAULT_MODEL, DEFAULT_OPENROUTER_MODEL, parseOutput, RefusalError } from './claude.ts';
 import { emptyProfile } from '../profile.ts';
 import type { JobDetails } from '../../api/types.ts';
 import detailsFixture from '../../api/fixtures/details.json';
@@ -235,5 +235,32 @@ describe('parseOutput', () => {
   it('rejects empty, too short or broken answers', () => {
     expect(() => parseOutput('ok')).toThrow(/no letter/);
     expect(() => parseOutput('{"letter": "abgeschnitten')).toThrow(/incomplete/);
+  });
+});
+
+describe('createClient in the browser', () => {
+  async function headersSent(config: Parameters<typeof createClient>[0]) {
+    let sent: string[] = [];
+    const fakeFetch = (async (_url: string, init?: RequestInit) => {
+      sent = [...new Headers(init?.headers).keys()];
+      const text = JSON.stringify({ letter: 'x'.repeat(200), adKeywords: [], missing: [] });
+      return new Response(
+        JSON.stringify({ id: 'x', type: 'message', role: 'assistant', model: 'm', content: [{ type: 'text', text }], stop_reason: 'end_turn', usage: { input_tokens: 1, output_tokens: 1 } }),
+        { headers: { 'content-type': 'application/json' } },
+      );
+    }) as typeof fetch;
+    await createClaudeGenerator(config, createClient(config, fakeFetch))({ profile, job, language: 'de' });
+    return sent;
+  }
+
+  it('leaves out the headers OpenRouter\'s CORS preflight refuses', async () => {
+    const sent = await headersSent({ provider: 'openrouter', apiKey: 'sk-or-x', model: DEFAULT_OPENROUTER_MODEL, browser: true });
+    for (const h of OPENROUTER_BROWSER_DROPPED_HEADERS) expect(sent).not.toContain(h);
+    expect(sent).toContain('authorization');
+  });
+
+  it('keeps them for Anthropic and on the server', async () => {
+    expect(await headersSent({ provider: 'anthropic', apiKey: 'sk-ant-x', model: DEFAULT_MODEL, browser: true })).toContain('anthropic-dangerous-direct-browser-access');
+    expect(await headersSent({ provider: 'openrouter', apiKey: 'sk-or-x', model: DEFAULT_OPENROUTER_MODEL })).toContain('anthropic-version');
   });
 });

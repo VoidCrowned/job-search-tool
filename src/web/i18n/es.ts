@@ -249,6 +249,7 @@ export const es: Messages = {
     aiAuth: 'Se ha rechazado la clave de API. Introduce una clave válida en tu página de perfil.',
     aiRateLimit: 'Demasiadas solicitudes a Claude ahora mismo. Inténtalo de nuevo en un minuto.',
     aiFailed: 'Claude no ha podido redactar la carta. Inténtalo de nuevo o rellena la plantilla.',
+    aiConnection: 'No se pudo conectar con OpenRouter o Anthropic. Comprueba tu conexión a internet e inténtalo de nuevo. Si sigue pasando, avísanos.',
     aiUnavailable: 'No hay ninguna clave de API de Anthropic configurada.',
     serverDown: 'El servidor local no responde. ¿Está ejecutándose `npm run dev`?',
     notFound: 'Esta oferta ya no existe.',

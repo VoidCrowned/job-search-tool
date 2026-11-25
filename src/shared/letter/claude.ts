@@ -200,12 +200,26 @@ Rewrite only the sentences that contain them. If the profile has the fact, use i
 Return JSON: the finished letter, adKeywords as an empty list, and "missing": a short note in the letter's language for each point you removed.`;
 }
 
-export function createClient(config: AiConfig): Anthropic {
+/**
+ * Headers the SDK adds that OpenRouter's CORS preflight doesn't allow. In a browser they would get the whole
+ * request blocked, so they are left out there (OpenRouter doesn't need them). See scripts/cors-check.ts.
+ */
+export const OPENROUTER_BROWSER_DROPPED_HEADERS = ['anthropic-version', 'anthropic-dangerous-direct-browser-access'] as const;
+
+export function createClient(config: AiConfig, fetchFn?: typeof fetch): Anthropic {
   if (config.provider === 'openrouter') {
     // OpenRouter's Anthropic-compatible endpoint wants the key as "Authorization: Bearer", not "x-api-key".
-    return new Anthropic({ baseURL: OPENROUTER_BASE_URL, authToken: config.apiKey, apiKey: null, dangerouslyAllowBrowser: config.browser });
+    return new Anthropic({
+      baseURL: OPENROUTER_BASE_URL,
+      authToken: config.apiKey,
+      apiKey: null,
+      dangerouslyAllowBrowser: config.browser,
+      // null removes a default header.
+      defaultHeaders: config.browser ? Object.fromEntries(OPENROUTER_BROWSER_DROPPED_HEADERS.map((h) => [h, null])) : undefined,
+      fetch: fetchFn,
+    });
   }
-  return new Anthropic({ apiKey: config.apiKey, dangerouslyAllowBrowser: config.browser });
+  return new Anthropic({ apiKey: config.apiKey, dangerouslyAllowBrowser: config.browser, fetch: fetchFn });
 }
 
 export function createClaudeGenerator(config: AiConfig, client?: Anthropic): LetterGenerator {

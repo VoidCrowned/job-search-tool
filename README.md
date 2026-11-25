@@ -37,6 +37,7 @@ It is deployed by `.github/workflows/deploy.yml` on every push to `main`, once t
 
 - `npm test`: unit tests
 - `npm run api:check`: live check against the Jobsuche API (prints JSON)
+- `npm run cors:check`: checks that a browser may call OpenRouter and Anthropic the way the online version does (no key needed, prints JSON)
 - `npm run relay:dev` and `npm run relay:check -- <relay URL>`: run the job-search relay for the online version locally, and check a relay live (prints JSON)
 - `npm run lint`, `npm run build`
 

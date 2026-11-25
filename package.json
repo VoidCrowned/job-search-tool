@@ -14,7 +14,8 @@
     "api:check": "tsx scripts/api-check.ts",
     "letter:check": "tsx scripts/letter-check.ts",
     "relay:dev": "tsx scripts/relay-dev.ts",
-    "relay:check": "tsx scripts/relay-check.ts"
+    "relay:check": "tsx scripts/relay-check.ts",
+    "cors:check": "tsx scripts/cors-check.ts"
   },
   "repository": {
     "type": "git",
