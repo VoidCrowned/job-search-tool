@@ -76,6 +76,8 @@ export const en = {
     copyFailed: 'Copying failed. Select the text and press Ctrl+C.',
     replaceConfirm: 'Replace your unsaved changes with a new letter?',
     leftOut: 'Not in your profile, so Claude left it out of the letter. Add it yourself if it applies:',
+    leftOutTick: "Not in your profile, so Claude left it out of the letter. Check entries you'd like included, then hit Regenerate:",
+    regenerate: 'Regenerate',
     placeholdersLeft: (n: number) => `${n} placeholder${n === 1 ? '' : 's'} left to fill in: look for [brackets].`,
     history: (n: number) => `Earlier versions (${n})`,
     historyHint: 'Open a version to continue from it. Saving creates a new version; nothing is overwritten.',

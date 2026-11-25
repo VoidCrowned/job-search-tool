@@ -14,6 +14,8 @@ export interface LetterVersion {
   adKeywords?: string[];
   /** Points the profile didn't cover, left out of the letter (Claude only). Shown next to the letter, never in it. */
   missing?: string[];
+  /** Left-out points the candidate ticked as true; Claude used them as facts for this letter. */
+  confirmed?: string[];
 }
 
 export interface LetterFile {
@@ -25,6 +27,17 @@ export interface LetterFile {
 }
 
 export const MAX_LETTER_LENGTH = 20_000;
+/** Limits for the ticked left-out points sent with a regeneration. */
+export const MAX_CONFIRMED = 20;
+export const MAX_CONFIRMED_LENGTH = 300;
+
+/** Checks the "confirmed" list from a request: undefined if absent, null if invalid. Trimmed and de-duplicated. */
+export function parseConfirmed(value: unknown): string[] | undefined | null {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value) || value.length > MAX_CONFIRMED) return null;
+  if (!value.every((v) => typeof v === 'string' && v.trim() && v.length <= MAX_CONFIRMED_LENGTH)) return null;
+  return [...new Set((value as string[]).map((v) => v.trim()))];
+}
 /** Older versions beyond this are dropped. */
 export const MAX_VERSIONS = 50;
 

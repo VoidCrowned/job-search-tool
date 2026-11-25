@@ -263,6 +263,33 @@ describe('letter panel', () => {
     expect(document.querySelectorAll('.letter-notes li')).toHaveLength(2);
   });
 
+  it('regenerates with the ticked points, keeping earlier confirmed ones', async () => {
+    const calls: unknown[] = [];
+    add({ source: 'claude', language: 'en', text: 'First letter', missing: ['Willing to relocate', 'OpenShift experience'], confirmed: ['Driving licence'] });
+    fakeApi({
+      '/api/config': () => ({ ai: true, model: 'claude-opus-5-5' }),
+      '/api/profile': () => profile,
+      [`/api/letters/${ref}/generate`]: (_url, init) => {
+        calls.push(JSON.parse(init!.body as string));
+        return add({ source: 'claude', language: 'en', text: 'Second letter', missing: ['OpenShift experience'] });
+      },
+      [`/api/letters/${ref}`]: () => file,
+    });
+    render(<App />);
+    await screen.findByLabelText('Letter text');
+    const box = () => within(document.querySelector<HTMLElement>('.letter-notes')!);
+    expect(box().getByText(/Check entries you'd like included, then hit Regenerate/)).toBeTruthy();
+    const regenerate = box().getByText('Regenerate') as HTMLButtonElement;
+    expect(regenerate.disabled).toBe(true);
+    fireEvent.click(box().getByLabelText('Willing to relocate'));
+    expect(regenerate.disabled).toBe(false);
+    fireEvent.click(regenerate);
+    expect(((await panel().findByDisplayValue('Second letter')) as HTMLTextAreaElement).value).toBe('Second letter');
+    expect(calls).toEqual([{ language: 'en', mode: 'ai', confirmed: ['Driving licence', 'Willing to relocate'] }]);
+    expect((box().getByLabelText('OpenShift experience') as HTMLInputElement).checked).toBe(false);
+    expect(box().queryByLabelText('Willing to relocate')).toBeNull();
+  });
+
   it('shows no box for a Claude letter without notes', async () => {
     add({ source: 'claude', language: 'de', text: 'Fertiger Brief' });
     letterServer();

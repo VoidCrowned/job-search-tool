@@ -195,6 +195,10 @@ button.primary:disabled { opacity: 0.6; cursor: default; }
 .notice p { margin: 0; }
 .notice p + p, .notice p + ul { margin-top: 0.4rem; }
 .notice ul { margin: 0.25rem 0 0; padding-left: 1.25rem; }
+.notice ul.note-checks { list-style: none; padding-left: 0; }
+.notice ul.note-checks .check { display: flex; gap: 0.5rem; align-items: flex-start; }
+.notice ul.note-checks input { margin-top: 0.25rem; }
+.notice ul + .button { margin-top: 0.5rem; }
 button.button { font: inherit; cursor: pointer; color: var(--text); }
 .footer-links { display: flex; gap: 1rem; flex-wrap: wrap; }
 

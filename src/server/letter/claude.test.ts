@@ -100,7 +100,22 @@ describe('no placeholders', () => {
     expect(system).toMatch(/Never write placeholders, square brackets/);
     expect(system).not.toMatch(/write a short placeholder/);
     expect(user).toMatch(/No placeholders or square brackets anywhere/);
-    expect(user).toMatch(/"missing": short notes/);
+    expect(user).toMatch(/"missing": what you left out/);
+  });
+
+  it('adds confirmed points to the profile and asks for confirmable notes', () => {
+    const { system, user } = buildPrompt({ profile, job, language: 'de', today, confirmed: ['Umzug nach Berlin', 'Führerschein'] });
+    expect(user).toContain('skills: Pflegeplanung\nconfirmed:\n- Umzug nach Berlin\n- Führerschein\n</candidate_profile>');
+    expect(system).toMatch(/confirmed by the candidate.*worded no stronger than given/s);
+    expect(user).toMatch(/positive statement the candidate can tick/);
+    expect(user).toMatch(/no advice/);
+    expect(buildPrompt({ profile, job, language: 'de', today }).user).not.toContain('confirmed:');
+  });
+
+  it('drops notes the candidate already confirmed', async () => {
+    const { client } = clientAnswering(answer('Fertiger Brief.', [], ['umzug nach berlin', 'Führerschein']));
+    const result = await createClaudeGenerator({ apiKey: 'k', model: DEFAULT_MODEL }, client)({ profile, job, language: 'de', confirmed: ['Umzug nach Berlin'] });
+    expect(result.missing).toEqual(['Führerschein']);
   });
 
   it('passes Claude\'s notes on left-out points through', async () => {
