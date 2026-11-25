@@ -24,6 +24,10 @@
 - [x] ATS-ready letters (#38)
 - [x] OpenRouter as a key provider (#45)
 - [x] Showcase mock data (#9)
+- [x] Letters ready to send: no placeholders (#52)
+- [x] Left-out points shown next to the letter (#54)
+- [x] Tick left-out points and regenerate (#56)
+- [x] API key entry on the profile page (#58)
 
 ## Later
 - [ ] Hosting without exposing keys (#10)
