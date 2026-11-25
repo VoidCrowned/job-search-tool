@@ -228,6 +228,7 @@ export const es: Messages = {
     notFound: 'Esta oferta ya no existe.',
     upstream: 'La API de Jobsuche no responde ahora mismo. Inténtalo de nuevo en un momento.',
     invalidKey: 'Eso no es una clave de API. Las claves de OpenRouter empiezan por sk-or-, las de Anthropic por sk-ant-.',
+    outdatedServer: 'El servidor local ejecuta código antiguo. Detén `npm run dev` (Ctrl+C) y vuelve a iniciarlo.',
     invalid: 'Algunos valores no son válidos.',
     generic: (status) => `Algo ha salido mal (${status}).`,
   },

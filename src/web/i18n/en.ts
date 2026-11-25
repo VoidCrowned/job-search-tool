@@ -231,6 +231,7 @@ export const en = {
     notFound: 'This job ad no longer exists.',
     upstream: 'The Jobsuche API is not answering right now. Try again in a moment.',
     invalidKey: 'That is not an API key. OpenRouter keys start with sk-or-, Anthropic keys with sk-ant-.',
+    outdatedServer: 'The local server is running older code. Stop `npm run dev` (Ctrl+C) and start it again.',
     invalid: 'Some values are invalid.',
     generic: (status: number) => `Something went wrong (${status}).`,
   },

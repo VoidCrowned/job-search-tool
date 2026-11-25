@@ -228,6 +228,7 @@ export const de: Messages = {
     notFound: 'Diese Stellenanzeige gibt es nicht mehr.',
     upstream: 'Die Jobsuche-API antwortet gerade nicht. Versuch es gleich noch einmal.',
     invalidKey: 'Das ist kein API-Schlüssel. OpenRouter-Schlüssel beginnen mit sk-or-, Anthropic-Schlüssel mit sk-ant-.',
+    outdatedServer: 'Der lokale Server läuft noch mit altem Code. Beende `npm run dev` (Strg+C) und starte es neu.',
     invalid: 'Einige Werte sind ungültig.',
     generic: (status) => `Etwas ist schiefgelaufen (${status}).`,
   },

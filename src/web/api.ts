@@ -30,6 +30,8 @@ export function errorText(err: RequestError, t: Messages): string {
       return t.errors.aiUnavailable;
     case 'INVALID_KEY':
       return t.errors.invalidKey;
+    case 'UNKNOWN_ROUTE':
+      return t.errors.outdatedServer;
   }
   if (err.status === 404) return t.errors.notFound;
   if (err.status === 400) return t.errors.invalid;

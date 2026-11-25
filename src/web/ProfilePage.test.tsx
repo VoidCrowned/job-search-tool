@@ -131,4 +131,20 @@ describe('profile page', () => {
       { method: 'DELETE', body: undefined },
     ]);
   });
+
+  it('shows the key section first, and asks for a restart when the server is outdated', async () => {
+    fetchMock.mockImplementation(async (url: string) =>
+      url === '/api/settings/key'
+        ? new Response(JSON.stringify({ error: 'Not found.' }), { status: 404 })
+        : new Response(JSON.stringify(stored), { headers: { 'Content-Type': 'application/json' } }),
+    );
+    render(<App />);
+    expect(await screen.findByText(/running older code.*start it again/)).toBeTruthy();
+    expect(screen.queryByText(/job ad/)).toBeNull();
+    await screen.findByDisplayValue('Void');
+    const legends = [...document.querySelectorAll('legend')].map((l) => l.textContent);
+    expect(legends).toEqual(['Claude API key', 'Personal details', 'What you are looking for', 'CV']);
+    const save = screen.getByText('Save profile');
+    expect(save.compareDocumentPosition(screen.getByLabelText('CV as text')) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+  });
 });
