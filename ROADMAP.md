@@ -14,6 +14,7 @@
 - [x] Dark and light mode (#20)
 - [x] Expand jobs inside the result list (#21)
 - [x] Back to top and collapse all (#22)
+- [x] Instant search filters (#49)
 
 ## M3: Application texts
 - [x] Local profile (#6)
