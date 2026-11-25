@@ -4,6 +4,7 @@ import { ProfilePage } from './ProfilePage.tsx';
 import { AboutPage } from './AboutPage.tsx';
 import { isHosted } from './backend/index.ts';
 import { lastSearchHref } from './lastSearch.ts';
+import { clearResultsView } from './resultsView.ts';
 import { SearchPage } from './SearchPage.tsx';
 import { ThemeSelect } from './theme.tsx';
 import { appHref, onLinkClick, useLocation } from './router.ts';
@@ -28,6 +29,22 @@ function Route({ pathname, search }: { pathname: string; search: string }) {
   );
 }
 
+/**
+ * The header's "Job search": the same search, but fresh, at the top with no cards open. (Only "Back to results"
+ * and the browser's Back button bring back the old scroll position.)
+ */
+function openSearchFresh(e: React.MouseEvent<HTMLAnchorElement>) {
+  if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  clearResultsView();
+  if (window.location.pathname === appHref('/')) {
+    // Already on the search: navigating would save and keep the view, so just go to the top.
+    e.preventDefault();
+    window.scrollTo(0, 0);
+    return;
+  }
+  onLinkClick(e);
+}
+
 function Shell() {
   const t = useT();
   const location = useLocation();
@@ -40,7 +57,7 @@ function Shell() {
       <header className="site-header">
         {/* Pages on the left, settings (language, theme) on the right. */}
         <nav className="site-nav" aria-label={t.app.navigation}>
-          <a href={appHref(searchHref)} onClick={onLinkClick} className="nav-link" aria-current={onProfile ? undefined : 'page'}>
+          <a href={appHref(searchHref)} onClick={openSearchFresh} className="nav-link" aria-current={onProfile ? undefined : 'page'}>
             {t.app.jobSearch}
           </a>
           <span className="nav-separator" aria-hidden="true">
