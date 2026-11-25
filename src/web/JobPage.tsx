@@ -6,7 +6,7 @@ import { JobDetailsView } from './JobDetailsView.tsx';
 import { useJobDetails } from './jobDetails.ts';
 import { LetterPanel } from './LetterPanel.tsx';
 import { lastSearchHref } from './lastSearch.ts';
-import { onLinkClick } from './router.ts';
+import { appHref, onLinkClick } from './router.ts';
 
 export function JobPage({ refnr }: { refnr: string }) {
   const t = useT();
@@ -19,7 +19,7 @@ export function JobPage({ refnr }: { refnr: string }) {
 
   return (
     <article className="job-page">
-      <a href={lastSearchHref()} onClick={onLinkClick} className="back">
+      <a href={appHref(lastSearchHref())} onClick={onLinkClick} className="back">
         {t.job.back}
       </a>
       {result.state === 'loading' && <p className="hint">{t.job.loading}</p>}

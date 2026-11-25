@@ -40,10 +40,12 @@ describe('theme switch', () => {
     expect(localStorage.getItem('jobsuche:theme')).toBeNull();
   });
 
-  it('index.html applies the saved theme before React starts', () => {
+  it('index.html applies the saved theme before React starts (from a file, so the CSP needs no inline script)', () => {
     const html = readFileSync('index.html', 'utf8');
-    const script = /<script>([\s\S]*?)<\/script>/.exec(html)?.[1];
-    expect(script).toBeTruthy();
+    expect(html).toContain('<script src="/theme-init.js"></script>');
+    expect(html.indexOf('theme-init.js')).toBeLessThan(html.indexOf('<body>'));
+    expect(/<script>/.test(html)).toBe(false);
+    const script = readFileSync('public/theme-init.js', 'utf8');
     localStorage.setItem('jobsuche:theme', 'dark');
     new Function(script!)();
     expect(document.documentElement.dataset.theme).toBe('dark');

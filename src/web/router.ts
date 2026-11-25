@@ -6,7 +6,23 @@ function subscribe(onChange: () => void) {
   return () => window.removeEventListener('popstate', onChange);
 }
 
-const snapshot = () => window.location.pathname + window.location.search;
+/**
+ * Where the site lives: "" locally, "/job-search-tool" on GitHub Pages (Vite's `base`). App paths like
+ * "/profile" stay the same everywhere; only real URLs carry the prefix.
+ */
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+/** The real URL for an app path, for href attributes. */
+export function appHref(path: string): string {
+  return BASE + path;
+}
+
+/** The app path for a real URL path (the reverse of appHref). */
+function appPath(pathname: string): string {
+  return BASE && pathname.startsWith(BASE) ? pathname.slice(BASE.length) || '/' : pathname;
+}
+
+const snapshot = () => appPath(window.location.pathname) + window.location.search;
 
 /** Current path + query, re-rendering on navigation. */
 export function useLocation(): URL {
@@ -28,7 +44,7 @@ export function onBeforeNavigate(fn: () => void): () => void {
 export function navigate(to: string) {
   if (to === snapshot()) return;
   for (const fn of beforeNavigate) fn();
-  window.history.pushState(null, '', to);
+  window.history.pushState(null, '', appHref(to));
   window.dispatchEvent(new PopStateEvent('popstate'));
   // A new page starts at the top, like a normal page load. (Browser back/forward keep their own behaviour.)
   window.scrollTo(0, 0);
@@ -38,5 +54,6 @@ export function navigate(to: string) {
 export function onLinkClick(e: React.MouseEvent<HTMLAnchorElement>) {
   if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
   e.preventDefault();
-  navigate(e.currentTarget.getAttribute('href') ?? '/');
+  const url = new URL(e.currentTarget.getAttribute('href') ?? '/', window.location.href);
+  navigate(appPath(url.pathname) + url.search + url.hash);
 }

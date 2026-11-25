@@ -7,7 +7,7 @@ import { backend, type AiConfig } from './backend/index.ts';
 import { AtsChecklist } from './AtsChecklist.tsx';
 import { formatDateTime } from './format.ts';
 import { useT } from './i18n/index.tsx';
-import { onLinkClick } from './router.ts';
+import { appHref, onLinkClick } from './router.ts';
 
 export const LETTER_ANCHOR = 'letter';
 
@@ -195,7 +195,7 @@ function LetterEditor({ refnr, initial, profile, config }: { refnr: string; init
       {isProfileEmpty(profile) && (
         <p className="notice">
           {t.letter.profileEmpty}{' '}
-          <a href="/profile" onClick={onLinkClick}>
+          <a href={appHref('/profile')} onClick={onLinkClick}>
             {t.letter.editProfile}
           </a>
         </p>

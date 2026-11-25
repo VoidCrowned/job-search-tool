@@ -14,7 +14,22 @@ export const en = {
     backToSearch: 'Back to search',
     profile: 'Profile',
     dataSource: 'Data:',
+    staysInBrowser: 'Your key, profile and letters stay in this browser.',
+    privacy: 'Privacy',
     pageTitle: (what?: string) => (what ? `${what} · Jobsuche` : 'Jobsuche'),
+  },
+
+  about: {
+    title: 'Privacy',
+    whereTitle: 'What goes where',
+    where: [
+      'Job searches go through a small relay on Cloudflare to the Bundesagentur für Arbeit, because their API cannot be called from a browser directly. The relay stores nothing and keeps no logs.',
+      'Your profile, letters and API key are saved only in this browser (IndexedDB and localStorage). Nothing is sent to me or stored on a server.',
+      'When you write a letter with Claude, your profile and the job ad go directly from your browser to OpenRouter or Anthropic, using your own key. Their privacy policies apply.',
+      'This website is served by GitHub Pages; GitHub may log technical access data such as IP addresses.',
+    ],
+    noTracking: 'No cookies, no analytics, no tracking. Use Export on the profile page to keep a copy of your data, and clear your browser data to delete it.',
+    imprintTitle: 'Imprint',
   },
 
   profile: {

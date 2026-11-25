@@ -24,7 +24,7 @@ import { useJobDetails } from './jobDetails.ts';
 import { PageTools } from './PageTools.tsx';
 import { rememberSearch } from './lastSearch.ts';
 import { clearResultsView, readResultsView, saveResultsView } from './resultsView.ts';
-import { navigate, onBeforeNavigate, onLinkClick } from './router.ts';
+import { appHref, navigate, onBeforeNavigate, onLinkClick } from './router.ts';
 
 /** Space (px) kept above a card that is scrolled back into view after collapsing. */
 const COLLAPSE_MARGIN = 12;
@@ -267,7 +267,7 @@ function Results({ query, data, params }: { query: string; data: SearchResponse;
     return <p className="hint">{t.search.noResults}</p>;
   }
   const lastPage = Math.max(1, Math.min(Math.ceil(data.maxErgebnisse / params.size), Math.floor(MAX_RESULT_WINDOW / params.size)));
-  const pageHref = (page: number) => `/?${toAppQuery({ ...params, page })}`;
+  const pageHref = (page: number) => appHref(`/?${toAppQuery({ ...params, page })}`);
   const from = (params.page - 1) * params.size + 1;
 
   return (
@@ -312,7 +312,7 @@ function JobCard({ job, expanded, onToggle }: { job: JobSearchItem; expanded: bo
   const place = formatPlace(job, t);
   const pay = formatPay(job, t);
   const published = formatDate(job.veroeffentlichungszeitraum?.von ?? job.datumErsteVeroeffentlichung, t);
-  const href = `/job/${encodeURIComponent(job.referenznummer)}`;
+  const href = appHref(`/job/${encodeURIComponent(job.referenznummer)}`);
   const bodyId = `job-${job.referenznummer}`;
 
   function onTitleClick(e: MouseEvent<HTMLAnchorElement>) {

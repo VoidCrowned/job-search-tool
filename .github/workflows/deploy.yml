@@ -1,0 +1,66 @@
+# Deploys the online version (#10): the job-search relay to Cloudflare Workers, then the website to GitHub Pages.
+# Runs only once the repository variable ONLINE is "true" (set during the one-time setup).
+name: Deploy online version
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: deploy-online
+  cancel-in-progress: false
+jobs:
+  relay:
+    if: vars.ONLINE == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.url.outputs.url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: worker
+          command: deploy
+      - id: url
+        # The repository variable RELAY_URL wins if set (e.g. a custom domain later).
+        run: echo "url=${{ vars.RELAY_URL || steps.deploy.outputs.deployment-url }}" >> "$GITHUB_OUTPUT"
+      - name: Live relay check (JSON)
+        run: npm run -s relay:check -- "${{ steps.url.outputs.url }}" https://voidcrowned.github.io
+
+  pages:
+    needs: relay
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+        env:
+          VITE_HOSTED: '1'
+          VITE_RELAY_URL: ${{ needs.relay.outputs.url }}
+          VITE_IMPRINT: ${{ vars.IMPRINT }}
+      - name: Deep links (e.g. /job-search-tool/profile) load the app
+        run: cp dist/index.html dist/404.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v4

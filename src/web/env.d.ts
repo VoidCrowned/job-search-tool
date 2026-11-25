@@ -4,4 +4,6 @@ interface ImportMetaEnv {
   readonly VITE_HOSTED?: string;
   /** The job-search relay (worker/), e.g. https://job-search-relay.example.workers.dev */
   readonly VITE_RELAY_URL?: string;
+  /** Imprint text for the online version's privacy page (repository variable IMPRINT); none if empty. */
+  readonly VITE_IMPRINT?: string;
 }

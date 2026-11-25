@@ -12,7 +12,22 @@ export const de: Messages = {
     backToSearch: 'Zurück zur Suche',
     profile: 'Profil',
     dataSource: 'Daten:',
+    staysInBrowser: 'Schlüssel, Profil und Anschreiben bleiben in diesem Browser.',
+    privacy: 'Datenschutz',
     pageTitle: (what) => (what ? `${what} · Jobsuche` : 'Jobsuche'),
+  },
+
+  about: {
+    title: 'Datenschutz',
+    whereTitle: 'Was wohin geht',
+    where: [
+      'Jobsuchen laufen über ein kleines Relay bei Cloudflare zur Bundesagentur für Arbeit, weil deren API nicht direkt aus dem Browser erreichbar ist. Das Relay speichert nichts und führt keine Logs.',
+      'Profil, Anschreiben und API-Schlüssel werden nur in diesem Browser gespeichert (IndexedDB und localStorage). Nichts davon geht an mich oder liegt auf einem Server.',
+      'Wenn Claude ein Anschreiben schreibt, gehen dein Profil und die Stellenanzeige direkt aus deinem Browser an OpenRouter oder Anthropic, mit deinem eigenen Schlüssel. Es gelten deren Datenschutzbestimmungen.',
+      'Diese Website wird über GitHub Pages ausgeliefert; GitHub kann technische Zugriffsdaten wie IP-Adressen protokollieren.',
+    ],
+    noTracking: 'Keine Cookies, keine Statistik, kein Tracking. Mit Exportieren auf der Profilseite behältst du eine Kopie deiner Daten; Löschen der Browserdaten entfernt sie.',
+    imprintTitle: 'Impressum',
   },
 
   profile: {
