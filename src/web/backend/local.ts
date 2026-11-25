@@ -8,6 +8,7 @@ import type { AiConfig, Backend, KeyStatus, LetterResult } from './types.ts';
 const letters = (refnr: string) => `/api/letters/${encodeURIComponent(refnr)}`;
 
 export const localBackend: Backend = {
+  kind: 'local',
   searchJobs: (query, signal) => getJson<SearchResponse>(`/api/jobs?${query}`, signal),
   jobDetails: (refnr, signal) => getJson<JobDetails>(`/api/jobs/${encodeURIComponent(refnr)}`, signal),
   logoUrl: (hash) => `/api/logo/${encodeURIComponent(hash)}`,

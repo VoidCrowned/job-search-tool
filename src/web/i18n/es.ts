@@ -18,9 +18,11 @@ export const es: Messages = {
   profile: {
     title: 'Mi perfil',
     intro: 'Se usa para redactar cartas de presentación. Solo se guarda en este ordenador, en data/profile.json.',
+    introOnline: 'Se usa para redactar cartas de presentación. Solo se guarda en este navegador, en este dispositivo. Usa Exportar para guardar una copia.',
     key: {
       title: 'Clave de API de Claude',
       intro: 'Permite que Claude escriba tus cartas. Consigue una clave de OpenRouter en openrouter.ai/settings/keys (o una de Anthropic). Se guarda solo en este ordenador, en el archivo .env, nunca en tu perfil ni en el navegador.',
+      introOnline: 'Permite que Claude escriba tus cartas. Consigue una clave de OpenRouter en openrouter.ai/settings/keys (o una de Anthropic). Solo se guarda en este navegador y solo se envía a OpenRouter o Anthropic al escribir una carta. Les pagas directamente.',
       label: 'Clave de API',
       save: 'Guardar clave',
       isSetButton: 'Clave guardada',

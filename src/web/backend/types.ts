@@ -29,6 +29,8 @@ export interface LetterResult {
 }
 
 export interface Backend {
+  /** 'local': the server on this computer. 'browser': the online version, everything stays in this browser. */
+  kind: 'local' | 'browser';
   /** `query` is the search request built by toSearchRequest (src/api/params.ts). */
   searchJobs(query: URLSearchParams, signal?: AbortSignal): Promise<SearchResponse>;
   jobDetails(refnr: string, signal?: AbortSignal): Promise<JobDetails>;

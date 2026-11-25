@@ -42,6 +42,11 @@ export interface AiConfig {
   provider?: AiProvider;
   apiKey?: string;
   model: string;
+  /**
+   * Runs in a web page (the online version) with the visitor's own key. The SDK refuses this by default,
+   * because a key in a page is visible to that page; here it is the visitor's own key in their own browser.
+   */
+  browser?: boolean;
 }
 
 export const OPENROUTER_BASE_URL = 'https://openrouter.ai/api';
@@ -198,9 +203,9 @@ Return JSON: the finished letter, adKeywords as an empty list, and "missing": a 
 export function createClient(config: AiConfig): Anthropic {
   if (config.provider === 'openrouter') {
     // OpenRouter's Anthropic-compatible endpoint wants the key as "Authorization: Bearer", not "x-api-key".
-    return new Anthropic({ baseURL: OPENROUTER_BASE_URL, authToken: config.apiKey, apiKey: null });
+    return new Anthropic({ baseURL: OPENROUTER_BASE_URL, authToken: config.apiKey, apiKey: null, dangerouslyAllowBrowser: config.browser });
   }
-  return new Anthropic({ apiKey: config.apiKey });
+  return new Anthropic({ apiKey: config.apiKey, dangerouslyAllowBrowser: config.browser });
 }
 
 export function createClaudeGenerator(config: AiConfig, client?: Anthropic): LetterGenerator {

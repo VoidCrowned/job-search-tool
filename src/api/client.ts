@@ -4,8 +4,10 @@
 import { toApiQuery, type SearchParams } from './params.ts';
 import type { ApiErrorBody, JobDetails, SearchResponse } from './types.ts';
 
-export const API_BASE = 'https://rest.arbeitsagentur.de/jobboerse/jobsuche-service';
-export const LOGO_BASE = 'https://rest.arbeitsagentur.de/vermittlung/ag-darstellung-service';
+/** The Jobsuche API's host. The online version reaches the same paths through its relay (worker/). */
+export const UPSTREAM_HOST = 'https://rest.arbeitsagentur.de';
+export const API_BASE = `${UPSTREAM_HOST}/jobboerse/jobsuche-service`;
+export const LOGO_BASE = `${UPSTREAM_HOST}/vermittlung/ag-darstellung-service`;
 /** Public client ID used by the official website; not a secret. */
 export const API_KEY = 'jobboerse-jobsuche';
 
