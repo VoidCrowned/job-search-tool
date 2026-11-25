@@ -1,0 +1,10 @@
+# Job-search relay for the online version. Deployed by .github/workflows/deploy.yml.
+name = "job-search-relay"
+main = "src/index.ts"
+compatibility_date = "2026-11-01"
+
+[vars]
+ALLOWED_ORIGINS = "https://voidcrowned.github.io,http://localhost:5173,http://localhost:4173"
+
+[observability]
+enabled = false

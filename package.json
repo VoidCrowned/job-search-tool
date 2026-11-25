@@ -12,7 +12,9 @@
     "lint": "eslint .",
     "typecheck": "tsc -b",
     "api:check": "tsx scripts/api-check.ts",
-    "letter:check": "tsx scripts/letter-check.ts"
+    "letter:check": "tsx scripts/letter-check.ts",
+    "relay:dev": "tsx scripts/relay-dev.ts",
+    "relay:check": "tsx scripts/relay-check.ts"
   },
   "repository": {
     "type": "git",
