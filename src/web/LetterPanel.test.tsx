@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { App } from './App.tsx';
 import { clearJobDetailsCache } from './jobDetails.ts';
 import { fakeApi } from './testing/fakeApi.ts';
@@ -83,8 +83,13 @@ describe('letter panel', () => {
     expect(file.versions.map((v) => v.source)).toEqual(['template', 'edit']);
     expect(file.versions[1]).toMatchObject({ text: 'Final letter', language: 'en' });
 
-    fireEvent.click(panel().getByText('Copy'));
-    expect(await panel().findByText('Copied.')).toBeTruthy();
+    const copyButton = panel().getByText('Copy').closest('button')!;
+    const shown = () => copyButton.querySelector('.stable-label > span:not(.stable-label-hidden)')?.textContent?.trim();
+    expect(shown()).toBe('Copy');
+    fireEvent.click(copyButton);
+    await waitFor(() => expect(shown()).toBe('Copied'));
+    expect(copyButton.querySelector('svg')).toBeTruthy();
+    await waitFor(() => expect(shown()).toBe('Copy'), { timeout: 3000 });
     expect(writeText).toHaveBeenCalledWith('Final letter');
   });
 

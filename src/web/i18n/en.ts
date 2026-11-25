@@ -111,7 +111,7 @@ export const en = {
     saved: 'Saved.',
     unsaved: 'Unsaved changes',
     copy: 'Copy',
-    copied: 'Copied.',
+    copied: 'Copied',
     copyFailed: 'Copying failed. Select the text and press Ctrl+C.',
     replaceConfirm: 'Replace your unsaved changes with a new letter?',
     leftOut: 'Not in your profile, so Claude left it out of the letter. Add it yourself if it applies:',

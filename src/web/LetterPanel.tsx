@@ -1,4 +1,6 @@
 // "Write application" section on the job page: generate a letter, edit it, save it, copy it.
+import { CheckIcon } from './icons.tsx';
+import { StableLabel } from './StableLabel.tsx';
 import { useEffect, useRef, useState } from 'react';
 import { PLACEHOLDER, type LanguageChoice, type LetterFile, type LetterVersion } from '../shared/letter.ts';
 import { isProfileEmpty, type Profile } from '../shared/profile.ts';
@@ -165,15 +167,27 @@ function LetterEditor({ refnr, initial, profile, config }: { refnr: string; init
     }
   }
 
+  // The Copy button shows "✓ Copied" for two seconds, then goes back.
+  const [justCopied, setJustCopied] = useState(false);
+  const copiedTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(copiedTimer.current), []);
+  const flashCopied = () => {
+    setJustCopied(true);
+    clearTimeout(copiedTimer.current);
+    copiedTimer.current = setTimeout(() => setJustCopied(false), 2000);
+  };
+
   async function copy() {
     try {
       await navigator.clipboard.writeText(text);
       setStatus({ kind: 'copied' });
+      flashCopied();
     } catch {
       // Clipboard API unavailable (e.g. not a secure context): fall back to selecting the text.
       textRef.current?.select();
       const ok = typeof document.execCommand === 'function' && document.execCommand('copy');
       setStatus({ kind: ok ? 'copied' : 'copyFailed' });
+      if (ok) flashCopied();
     }
   }
 
@@ -186,9 +200,7 @@ function LetterEditor({ refnr, initial, profile, config }: { refnr: string; init
           ? t.letter.unsaved
           : status.kind === 'saved'
             ? t.letter.saved
-            : status.kind === 'copied'
-              ? t.letter.copied
-              : '';
+            : '';
 
   return (
     <div className="letter-editor">
@@ -297,8 +309,16 @@ function LetterEditor({ refnr, initial, profile, config }: { refnr: string; init
             <button type="button" className="primary" onClick={save} disabled={!dirty || status.kind === 'working'}>
               {t.letter.save}
             </button>
-            <button type="button" className="button" onClick={copy}>
-              {t.letter.copy}
+            <button type="button" className="button copy-button" onClick={copy}>
+              <StableLabel
+                labels={[
+                  t.letter.copy,
+                  <span className="copied-label">
+                    <CheckIcon /> {t.letter.copied}
+                  </span>,
+                ]}
+                show={justCopied ? 1 : 0}
+              />
             </button>
             <span aria-live="polite" className={status.kind === 'error' || status.kind === 'copyFailed' ? 'error' : 'hint'}>
               {message}

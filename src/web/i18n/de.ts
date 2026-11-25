@@ -109,7 +109,7 @@ export const de: Messages = {
     saved: 'Gespeichert.',
     unsaved: 'Ungespeicherte Änderungen',
     copy: 'Kopieren',
-    copied: 'Kopiert.',
+    copied: 'Kopiert',
     copyFailed: 'Kopieren fehlgeschlagen. Markiere den Text und drücke Strg+C.',
     replaceConfirm: 'Ungespeicherte Änderungen durch ein neues Anschreiben ersetzen?',
     leftOut: 'Steht nicht in deinem Profil, daher hat Claude es im Anschreiben weggelassen. Ergänze es selbst, falls es zutrifft:',
