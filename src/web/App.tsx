@@ -27,17 +27,24 @@ function Route({ pathname, search }: { pathname: string; search: string }) {
 function Shell() {
   const t = useT();
   const location = useLocation();
+  const onProfile = location.pathname === '/profile';
 
   return (
     <div className="page">
       <header className="site-header">
-        <a href="/" onClick={onLinkClick} className="brand">
-          {t.app.brand}
-        </a>
-        <div className="header-controls">
-          <a href="/profile" onClick={onLinkClick} className="header-link" aria-current={location.pathname === '/profile' ? 'page' : undefined}>
+        {/* Pages on the left, settings (language, theme) on the right. */}
+        <nav className="site-nav" aria-label={t.app.navigation}>
+          <a href="/" onClick={onLinkClick} className="nav-link" aria-current={onProfile ? undefined : 'page'}>
+            {t.app.jobSearch}
+          </a>
+          <span className="nav-separator" aria-hidden="true">
+            |
+          </span>
+          <a href="/profile" onClick={onLinkClick} className="nav-link" aria-current={onProfile ? 'page' : undefined}>
             {t.app.profile}
           </a>
+        </nav>
+        <div className="header-controls">
           <LanguageSelect />
           <ThemeSelect />
         </div>

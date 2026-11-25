@@ -7,7 +7,8 @@ export const en = {
   locale: 'en-GB',
 
   app: {
-    brand: 'Jobsuche',
+    jobSearch: 'Job search',
+    navigation: 'Main navigation',
     language: 'Language',
     notFound: 'Page not found.',
     backToSearch: 'Back to search',

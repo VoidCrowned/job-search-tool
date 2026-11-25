@@ -67,8 +67,12 @@ describe('profile page', () => {
   it('is reachable from the header', async () => {
     window.history.replaceState(null, '', '/');
     render(<App />);
+    expect(screen.getByText('Job search').getAttribute('aria-current')).toBe('page');
     fireEvent.click(screen.getByText('Profile'));
     expect(window.location.pathname).toBe('/profile');
+    expect(screen.getByText('Profile').getAttribute('aria-current')).toBe('page');
+    expect(screen.getByText('Job search').getAttribute('aria-current')).toBeNull();
+    expect(screen.getByRole('navigation', { name: 'Main navigation' }).textContent).toBe('Job search|Profile');
     expect(await screen.findByLabelText('Full name')).toBeTruthy();
   });
 
