@@ -79,11 +79,11 @@ describe('buildPrompt', () => {
 });
 
 describe('no placeholders', () => {
-  const answer = (letter: string, adKeywords: string[] = []) => ({
+  const answer = (letter: string, adKeywords: string[] = [], missing: string[] = []) => ({
     model: DEFAULT_MODEL,
     stop_reason: 'end_turn',
     usage: { input_tokens: 1000, output_tokens: 500 },
-    content: [{ type: 'text', text: JSON.stringify({ letter, adKeywords }) }],
+    content: [{ type: 'text', text: JSON.stringify({ letter, adKeywords, missing }) }],
   });
   function clientAnswering(...answers: (ReturnType<typeof answer> | Error)[]) {
     const create = vi.fn(async () => {
@@ -100,6 +100,12 @@ describe('no placeholders', () => {
     expect(system).toMatch(/Never write placeholders, square brackets/);
     expect(system).not.toMatch(/write a short placeholder/);
     expect(user).toMatch(/No placeholders or square brackets anywhere/);
+    expect(user).toMatch(/"missing": short notes/);
+  });
+
+  it('passes Claude\'s notes on left-out points through', async () => {
+    const { client } = clientAnswering(answer('Fertiger Brief.', ['Pflege'], ['Umzug nach Berlin', ' ', 'Umzug nach Berlin']));
+    expect(await generate(client)).toMatchObject({ letter: 'Fertiger Brief.', missing: ['Umzug nach Berlin'] });
   });
 
   it('makes no extra call for a clean letter', async () => {
@@ -109,20 +115,28 @@ describe('no placeholders', () => {
   });
 
   it('repairs placeholders with one more call, keeping the first keywords and adding up usage', async () => {
-    const { client, create } = clientAnswering(answer('Ich ziehe [Umzug ergänzen] gern um.', ['Pflege']), answer('Ich ziehe gern um.'));
+    const { client, create } = clientAnswering(
+      answer('Ich arbeite gern [Beispiel ergänzen] im Team.', ['Pflege'], ['Führerschein']),
+      answer('Ich arbeite gern im Team.', [], ['Ein Beispiel für Teamarbeit']),
+    );
     const result = await generate(client);
-    expect(result).toMatchObject({ letter: 'Ich ziehe gern um.', adKeywords: ['Pflege'], usage: { inputTokens: 2000, outputTokens: 1000 } });
+    expect(result).toMatchObject({
+      letter: 'Ich arbeite gern im Team.',
+      adKeywords: ['Pflege'],
+      missing: ['Führerschein', 'Ein Beispiel für Teamarbeit'],
+      usage: { inputTokens: 2000, outputTokens: 1000 },
+    });
     expect(create).toHaveBeenCalledTimes(2);
     const repair = (create.mock.calls[1] as unknown[])[0] as { messages: { content: string }[]; output_config: { effort: string } };
     expect(repair.output_config.effort).toBe('low');
-    expect(repair.messages[0].content).toContain('[Umzug ergänzen]');
+    expect(repair.messages[0].content).toContain('[Beispiel ergänzen]');
   });
 
   it('removes what the repair leaves, or everything if the repair fails', async () => {
     const left = clientAnswering(answer('A [x1].\n\n[Optional: mehr]\n\nB.'), answer('A [x2] und mehr.\n\nB.'));
-    expect((await generate(left.client)).letter).toBe('A und mehr.\n\nB.');
+    expect(await generate(left.client)).toMatchObject({ letter: 'A und mehr.\n\nB.', missing: ['x1', 'mehr', 'x2'] });
     const failed = clientAnswering(answer('A [x1].\n\n[Optional: mehr]\n\nB.'), new Error('network'));
-    expect((await generate(failed.client)).letter).toBe('A.\n\nB.');
+    expect(await generate(failed.client)).toMatchObject({ letter: 'A.\n\nB.', missing: ['x1', 'mehr'] });
   });
 
   it('builds the repair prompt with the profile, the letter and the placeholders', () => {
@@ -195,12 +209,12 @@ describe('createClaudeGenerator', () => {
 
 describe('parseOutput', () => {
   it('reads the structured JSON answer', () => {
-    expect(parseOutput('{"letter": " Hallo ", "adKeywords": ["A", 3]}')).toEqual({ letter: 'Hallo', adKeywords: ['A'] });
+    expect(parseOutput('{"letter": " Hallo ", "adKeywords": ["A", 3]}')).toEqual({ letter: 'Hallo', adKeywords: ['A'], missing: [] });
   });
 
   it('accepts a plain-text letter when a provider ignored the JSON format', () => {
     const plain = `Sehr geehrte Damen und Herren,\n\n${'Text '.repeat(30)}`;
-    expect(parseOutput(plain)).toEqual({ letter: plain.trim(), adKeywords: [] });
+    expect(parseOutput(plain)).toEqual({ letter: plain.trim(), adKeywords: [], missing: [] });
   });
 
   it('rejects empty, too short or broken answers', () => {

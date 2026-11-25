@@ -35,6 +35,15 @@ function latestKeywords(file: LetterFile): string[] | undefined {
   return [...file.versions].reverse().find((v) => v.adKeywords?.length)?.adKeywords;
 }
 
+/** Notes on what Claude left out. An edited version shows the notes of the generated letter it came from. */
+export function notesFor(file: LetterFile, version: LetterVersion): string[] {
+  // Match by id: after a save, the version and the file's list come from separate JSON objects.
+  const index = file.versions.findIndex((v) => v.id === version.id);
+  const upTo = file.versions.slice(0, index + 1).reverse();
+  const source = version.source === 'edit' ? upTo.find((v) => v.source !== 'edit') : version;
+  return source?.missing ?? [];
+}
+
 const toRequestError = (err: unknown) => (err instanceof RequestError ? err : new RequestError(0, String(err)));
 
 export function LetterPanel({ refnr }: { refnr: string }) {
@@ -97,6 +106,7 @@ function LetterEditor({ refnr, initial, profile, config }: { refnr: string; init
   const textRef = useRef<HTMLTextAreaElement>(null);
   const dirty = current !== undefined && text !== current.text;
   const placeholders = text.match(PLACEHOLDER)?.length ?? 0;
+  const notes = current ? notesFor(file, current) : [];
   const url = `/api/letters/${encodeURIComponent(refnr)}`;
 
   function show(result: { file: LetterFile; version: LetterVersion }, next: Status) {
@@ -223,7 +233,21 @@ function LetterEditor({ refnr, initial, profile, config }: { refnr: string; init
             lang={current.language}
             spellCheck
           />
-          {placeholders > 0 && <p className="notice">{t.letter.placeholdersLeft(placeholders)}</p>}
+          {(placeholders > 0 || notes.length > 0) && (
+            <div className="notice letter-notes">
+              {placeholders > 0 && <p>{t.letter.placeholdersLeft(placeholders)}</p>}
+              {notes.length > 0 && (
+                <>
+                  <p>{t.letter.leftOut}</p>
+                  <ul>
+                    {notes.map((note) => (
+                      <li key={note}>{note}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+          )}
           <div className="form-actions">
             <button type="button" className="primary" onClick={save} disabled={!dirty || status.kind === 'working'}>
               {t.letter.save}

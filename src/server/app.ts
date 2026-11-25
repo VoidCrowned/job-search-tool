@@ -116,7 +116,7 @@ export function createApp(options: AppOptions = {}) {
 
     if (mode === 'ai' && generator) {
       const result = await generator({ profile, job, language });
-      const version = await addVersion(file, { source: 'claude', language, text: result.letter, adKeywords: result.adKeywords });
+      const version = await addVersion(file, { source: 'claude', language, text: result.letter, adKeywords: result.adKeywords, missing: result.missing.length ? result.missing : undefined });
       return c.json({ file, version });
     }
     const version = await addVersion(file, { source: 'template', language, text: fillTemplate(profile, job, language) });

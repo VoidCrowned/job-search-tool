@@ -73,6 +73,7 @@ export const de: Messages = {
     copied: 'Kopiert.',
     copyFailed: 'Kopieren fehlgeschlagen. Markiere den Text und drücke Strg+C.',
     replaceConfirm: 'Ungespeicherte Änderungen durch ein neues Anschreiben ersetzen?',
+    leftOut: 'Steht nicht in deinem Profil, daher hat Claude es im Anschreiben weggelassen. Ergänze es selbst, falls es zutrifft:',
     placeholdersLeft: (n) => `Noch ${n} Platzhalter auszufüllen: achte auf [Klammern].`,
     history: (n) => `Frühere Versionen (${n})`,
     historyHint: 'Öffne eine Version, um mit ihr weiterzuarbeiten. Speichern legt eine neue Version an; nichts wird überschrieben.',
