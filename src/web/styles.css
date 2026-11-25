@@ -192,6 +192,9 @@ button.primary:disabled { opacity: 0.6; cursor: default; }
 .letter-controls { margin-top: 0.75rem; }
 .letter-text { width: 100%; margin-top: 0.75rem; line-height: 1.55; font-family: inherit; }
 .notice { background: var(--badge); border-radius: 6px; padding: 0.5rem 0.75rem; margin: 0.75rem 0 0; }
+.notice p { margin: 0; }
+.notice p + p, .notice p + ul { margin-top: 0.4rem; }
+.notice ul { margin: 0.25rem 0 0; padding-left: 1.25rem; }
 button.button { font: inherit; cursor: pointer; color: var(--text); }
 .footer-links { display: flex; gap: 1rem; flex-wrap: wrap; }
 

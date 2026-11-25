@@ -97,9 +97,9 @@ describe('letters API with Claude', () => {
   });
 
   it('uses Claude by default when available and stores the keywords', async () => {
-    const generator = vi.fn(async () => ({ letter: 'Claude letter', adKeywords: ['Pflege'] }));
+    const generator = vi.fn(async () => ({ letter: 'Claude letter', adKeywords: ['Pflege'], missing: ['Umzug nach Berlin'] }));
     const { version } = (await (await postAi(generator, { language: 'auto' })).json()) as { version: LetterVersion };
-    expect(version).toMatchObject({ source: 'claude', language: 'de', text: 'Claude letter', adKeywords: ['Pflege'] });
+    expect(version).toMatchObject({ source: 'claude', language: 'de', text: 'Claude letter', adKeywords: ['Pflege'], missing: ['Umzug nach Berlin'] });
     expect(generator).toHaveBeenCalledWith(expect.objectContaining({ language: 'de', job: expect.objectContaining({ referenznummer: ref }) }));
     expect(((generator.mock.calls[0] as unknown[])[0] as { profile: { name: string } }).profile.name).toBe('Void Example');
   });

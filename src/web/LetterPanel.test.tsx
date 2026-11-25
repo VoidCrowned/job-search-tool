@@ -248,6 +248,29 @@ describe('letter panel', () => {
     expect(panel().getByText(/Key terms from the ad: 1 of 1/)).toBeTruthy();
   });
 
+  it('lists what Claude left out in the blue box, not in the letter, also after an edit', async () => {
+    add({ source: 'claude', language: 'de', text: 'Fertiger Brief', missing: ['Umzug nach Berlin', 'Erfahrung mit OpenShift'] });
+    letterServer();
+    render(<App />);
+    const textarea = (await screen.findByLabelText('Letter text')) as HTMLTextAreaElement;
+    expect(textarea.value).toBe('Fertiger Brief');
+    const box = within(document.querySelector<HTMLElement>('.letter-notes')!);
+    expect(box.getByText(/Claude left it out of the letter/)).toBeTruthy();
+    expect(box.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Umzug nach Berlin', 'Erfahrung mit OpenShift']);
+    fireEvent.change(textarea, { target: { value: 'Fertiger Brief, bearbeitet' } });
+    fireEvent.click(panel().getByText('Save changes'));
+    await panel().findByText('Saved.');
+    expect(document.querySelectorAll('.letter-notes li')).toHaveLength(2);
+  });
+
+  it('shows no box for a Claude letter without notes', async () => {
+    add({ source: 'claude', language: 'de', text: 'Fertiger Brief' });
+    letterServer();
+    render(<App />);
+    await screen.findByLabelText('Letter text');
+    expect(document.querySelector('.letter-notes')).toBeNull();
+  });
+
   it('names OpenRouter in the hint when it is the provider', async () => {
     fakeApi({ '/api/config': () => ({ ai: true, model: 'anthropic/claude-opus-5.5', provider: 'openrouter' }) });
     render(<App />);

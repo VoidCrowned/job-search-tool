@@ -46,6 +46,7 @@ try {
       estimatedCostUsd: Math.round(((usage.inputTokens * 4 + usage.outputTokens * 20) / 1e6) * 1000) / 1000,
       checks,
       adKeywords: result.adKeywords,
+      missing: result.missing,
       letterPreview: result.letter.slice(0, 400),
     },
     Object.values(checks).every(Boolean),

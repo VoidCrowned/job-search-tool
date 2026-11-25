@@ -12,6 +12,8 @@ export interface LetterVersion {
   text: string;
   /** Keywords from the ad (Claude only); used by the ATS check. */
   adKeywords?: string[];
+  /** Points the profile didn't cover, left out of the letter (Claude only). Shown next to the letter, never in it. */
+  missing?: string[];
 }
 
 export interface LetterFile {
@@ -30,10 +32,15 @@ export const MAX_VERSIONS = 50;
 export const PLACEHOLDER = /\[[^\]\n]{2,80}\]/g;
 
 /**
- * Last-resort cleanup for AI letters: drops "[…]" placeholders, then lines left empty and stray spaces.
- * Blank lines between paragraphs stay.
+ * Last-resort cleanup for AI letters: takes "[…]" placeholders out of the text (so they can be listed next to it),
+ * then drops lines left empty and stray spaces. Blank lines between paragraphs stay.
  */
-export function removePlaceholders(text: string): string {
+export function extractPlaceholders(text: string): { text: string; removed: string[] } {
+  const removed = [...new Set((text.match(PLACEHOLDER) ?? []).map((p) => p.slice(1, -1).replace(/^\s*optional\s*:\s*/i, '').trim()))].filter(Boolean);
+  return { text: removePlaceholders(text), removed };
+}
+
+function removePlaceholders(text: string): string {
   return text
     .split('\n')
     .flatMap((line) => {
