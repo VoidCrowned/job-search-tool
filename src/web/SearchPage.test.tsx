@@ -30,7 +30,7 @@ describe('search page', () => {
     const fetch = mockFetch(searchFixture);
     render(<App />);
     expect(await screen.findByText(searchFixture.ergebnisliste[0].stellenangebotsTitel)).toBeTruthy();
-    expect((fetch.mock.calls[0] as unknown as [string])[0]).toBe('/api/jobs?was=Pflege&wo=Hamburg');
+    expect((fetch.mock.calls[0] as unknown as [string])[0]).toBe('/api/jobs?was=Pflege&wo=Hamburg&zeitarbeit=false');
     expect(screen.getByText(/3,842 jobs near Hamburg/)).toBeTruthy();
     expect(screen.getByText('External ad')).toBeTruthy();
     const link = screen.getByText(searchFixture.ergebnisliste[0].stellenangebotsTitel).closest('a');
@@ -67,7 +67,33 @@ describe('search page', () => {
     fireEvent.change(screen.getByLabelText('Radius'), { target: { value: '10' } });
     expect(window.location.search).toBe('?was=Koch&umkreis=10');
     await screen.findByText(/3,842 jobs/);
-    expect((fetch.mock.calls.at(-1) as unknown as [string])[0]).toBe('/api/jobs?was=Koch&umkreis=10');
+    expect((fetch.mock.calls.at(-1) as unknown as [string])[0]).toBe('/api/jobs?was=Koch&umkreis=10&zeitarbeit=false');
+  });
+
+  it('leaves temp agency jobs out unless the box is ticked', async () => {
+    window.history.replaceState(null, '', '/?was=Pflege');
+    const fetch = mockFetch(searchFixture);
+    render(<App />);
+    await screen.findByText(/3,842 jobs/);
+    const box = screen.getByLabelText('Include temporary agency jobs') as HTMLInputElement;
+    expect(box.checked).toBe(false);
+    expect(screen.getByText('Filters').closest('details')?.open).toBe(false);
+    fireEvent.click(box);
+    expect(window.location.search).toBe('?was=Pflege&zeitarbeit=true');
+    await screen.findByText(/3,842 jobs/);
+    expect((fetch.mock.calls.at(-1) as unknown as [string])[0]).toBe('/api/jobs?was=Pflege&zeitarbeit=true');
+    fireEvent.click(box);
+    expect(window.location.search).toBe('?was=Pflege');
+  });
+
+  it('still understands old links with zeitarbeit=false', async () => {
+    window.history.replaceState(null, '', '/?was=Pflege&zeitarbeit=false');
+    const fetch = mockFetch(searchFixture);
+    render(<App />);
+    await screen.findByText(/3,842 jobs/);
+    expect((fetch.mock.calls[0] as unknown as [string])[0]).toBe('/api/jobs?was=Pflege&zeitarbeit=false');
+    expect((screen.getByLabelText('Include temporary agency jobs') as HTMLInputElement).checked).toBe(false);
+    expect(screen.getByText('Next →').getAttribute('href')).toBe('/?was=Pflege&page=2');
   });
 
   it('resets the form on Back', async () => {
