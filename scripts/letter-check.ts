@@ -31,6 +31,7 @@ try {
     namesReference: result.letter.includes(job.referenznummer),
     usesCandidateName: result.letter.includes(profile.name),
     germanGreeting: /Sehr geehrte/.test(result.letter),
+    noPlaceholders: !/\[[^\]\n]{2,80}\]/.test(result.letter),
     noPromptLeak: !/<\/?(job_ad|candidate_profile)>/.test(result.letter),
     keywords: result.adKeywords.length >= 3,
   };

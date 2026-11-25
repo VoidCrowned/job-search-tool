@@ -29,6 +29,27 @@ export const MAX_VERSIONS = 50;
 /** Placeholders the user still has to fill look like "[Your name]". */
 export const PLACEHOLDER = /\[[^\]\n]{2,80}\]/g;
 
+/**
+ * Last-resort cleanup for AI letters: drops "[…]" placeholders, then lines left empty and stray spaces.
+ * Blank lines between paragraphs stay.
+ */
+export function removePlaceholders(text: string): string {
+  return text
+    .split('\n')
+    .flatMap((line) => {
+      if (!line.match(PLACEHOLDER)) return [line];
+      const cleaned = line
+        .replace(PLACEHOLDER, '')
+        .replace(/[ \t]{2,}/g, ' ')
+        .replace(/ +([.,;:!?])/g, '$1')
+        .trim();
+      return cleaned && !/^[.,;:!?]+$/.test(cleaned) ? [cleaned] : [];
+    })
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 export function isLanguageChoice(v: unknown): v is LanguageChoice {
   return v === 'de' || v === 'en' || v === 'auto';
 }
