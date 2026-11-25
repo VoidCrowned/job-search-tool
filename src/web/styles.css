@@ -181,6 +181,12 @@ label.check { display: inline-flex; gap: 0.4rem; align-items: center; font-size:
 .profile-field { display: flex; flex-direction: column; gap: 0.25rem; }
 .profile-field label { font-size: 0.85rem; color: var(--muted); }
 .profile-field.field-desiredRoles, .profile-field.field-skills, .profile-field.field-notes, .profile-field.field-cv { grid-column: 1 / -1; }
+/* API key: explanation on the left with room to breathe, entry on the right. */
+.key-section { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 1rem 2rem; }
+.key-info { flex: 1 1 22rem; }
+.key-info p { margin: 0 0 0.5rem; }
+.key-entry { flex: 0 1 20rem; margin-left: auto; display: flex; flex-direction: column; gap: 0.5rem; }
+.key-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
 textarea { font: inherit; padding: 0.5rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); resize: vertical; }
 .form-actions { display: flex; gap: 1rem; align-items: center; position: sticky; bottom: 0; padding: 0.75rem 0; background: var(--bg); }
 button.primary:disabled { opacity: 0.6; cursor: default; }
