@@ -24,7 +24,7 @@ interface Loaded {
 
 type Status =
   | { kind: 'idle' }
-  | { kind: 'working'; mode?: 'ai' | 'template' }
+  | { kind: 'working'; mode?: 'ai' | 'template'; regenerate?: boolean }
   | { kind: 'saved' }
   | { kind: 'copied' }
   | { kind: 'copyFailed' }
@@ -35,13 +35,22 @@ function latestKeywords(file: LetterFile): string[] | undefined {
   return [...file.versions].reverse().find((v) => v.adKeywords?.length)?.adKeywords;
 }
 
-/** Notes on what Claude left out. An edited version shows the notes of the generated letter it came from. */
-export function notesFor(file: LetterFile, version: LetterVersion): string[] {
+/** The generated letter a version came from: itself, or for an edit the newest generated version before it. */
+function generatedSource(file: LetterFile, version: LetterVersion): LetterVersion | undefined {
+  if (version.source !== 'edit') return version;
   // Match by id: after a save, the version and the file's list come from separate JSON objects.
   const index = file.versions.findIndex((v) => v.id === version.id);
-  const upTo = file.versions.slice(0, index + 1).reverse();
-  const source = version.source === 'edit' ? upTo.find((v) => v.source !== 'edit') : version;
-  return source?.missing ?? [];
+  return file.versions.slice(0, index + 1).reverse().find((v) => v.source !== 'edit');
+}
+
+/** Notes on what Claude left out. An edited version shows the notes of the generated letter it came from. */
+export function notesFor(file: LetterFile, version: LetterVersion): string[] {
+  return generatedSource(file, version)?.missing ?? [];
+}
+
+/** Points already confirmed for the letter a version came from; kept for every later regeneration. */
+function confirmedFor(file: LetterFile, version: LetterVersion): string[] {
+  return generatedSource(file, version)?.confirmed ?? [];
 }
 
 const toRequestError = (err: unknown) => (err instanceof RequestError ? err : new RequestError(0, String(err)));
@@ -107,6 +116,19 @@ function LetterEditor({ refnr, initial, profile, config }: { refnr: string; init
   const dirty = current !== undefined && text !== current.text;
   const placeholders = text.match(PLACEHOLDER)?.length ?? 0;
   const notes = current ? notesFor(file, current) : [];
+  const [ticked, setTicked] = useState<ReadonlySet<string>>(new Set());
+  // A different version on screen starts with nothing ticked.
+  const [tickedFor, setTickedFor] = useState(current?.id);
+  if (current?.id !== tickedFor) {
+    setTickedFor(current?.id);
+    setTicked(new Set());
+  }
+  const toggleNote = (note: string) =>
+    setTicked((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(note)) next.add(note);
+      return next;
+    });
   const url = `/api/letters/${encodeURIComponent(refnr)}`;
 
   function show(result: { file: LetterFile; version: LetterVersion }, next: Status) {
@@ -123,11 +145,16 @@ function LetterEditor({ refnr, initial, profile, config }: { refnr: string; init
     setStatus({ kind: 'idle' });
   }
 
-  async function generate(mode: 'ai' | 'template') {
+  async function generate(mode: 'ai' | 'template', regenerate = false) {
     if (dirty && !window.confirm(t.letter.replaceConfirm)) return;
-    setStatus({ kind: 'working', mode });
+    setStatus({ kind: 'working', mode, regenerate });
+    // Regenerate: same language as the letter on screen, plus everything confirmed so far and now ticked.
+    const body =
+      regenerate && current
+        ? { language: current.language, mode, confirmed: [...new Set([...confirmedFor(file, current), ...notes.filter((n) => ticked.has(n))])] }
+        : { language, mode };
     try {
-      show(await sendJson('POST', `${url}/generate`, { language, mode }), { kind: 'idle' });
+      show(await sendJson('POST', `${url}/generate`, body), { kind: 'idle' });
     } catch (err) {
       setStatus({ kind: 'error', error: toRequestError(err) });
     }
@@ -189,7 +216,7 @@ function LetterEditor({ refnr, initial, profile, config }: { refnr: string; init
         </label>
         {config.ai && (
           <button type="button" className="primary" onClick={() => generate('ai')} disabled={status.kind === 'working'}>
-            {status.kind === 'working' && status.mode === 'ai' ? t.letter.working : t.letter.writeWithClaude}
+            {status.kind === 'working' && status.mode === 'ai' && !status.regenerate ? t.letter.working : t.letter.writeWithClaude}
           </button>
         )}
         <button
@@ -236,7 +263,30 @@ function LetterEditor({ refnr, initial, profile, config }: { refnr: string; init
           {(placeholders > 0 || notes.length > 0) && (
             <div className="notice letter-notes">
               {placeholders > 0 && <p>{t.letter.placeholdersLeft(placeholders)}</p>}
-              {notes.length > 0 && (
+              {notes.length > 0 && config.ai && (
+                <>
+                  <p>{t.letter.leftOutTick}</p>
+                  <ul className="note-checks">
+                    {notes.map((note) => (
+                      <li key={note}>
+                        <label className="check">
+                          <input type="checkbox" checked={ticked.has(note)} onChange={() => toggleNote(note)} />
+                          {note}
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
+                  <button
+                    type="button"
+                    className="button"
+                    onClick={() => generate('ai', true)}
+                    disabled={ticked.size === 0 || status.kind === 'working'}
+                  >
+                    {status.kind === 'working' && status.regenerate ? t.letter.working : t.letter.regenerate}
+                  </button>
+                </>
+              )}
+              {notes.length > 0 && !config.ai && (
                 <>
                   <p>{t.letter.leftOut}</p>
                   <ul>

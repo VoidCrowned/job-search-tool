@@ -4,7 +4,7 @@ import { createJobsucheClient, JobsucheError, logoUrl, type JobsucheClient } fro
 import { parseSearchParams } from '../api/params.ts';
 import { randomUUID } from 'node:crypto';
 import type { JobDetails } from '../api/types.ts';
-import { isLanguageChoice, MAX_LETTER_LENGTH, type LetterFile, type LetterLanguage, type LetterVersion } from '../shared/letter.ts';
+import { isLanguageChoice, MAX_LETTER_LENGTH, parseConfirmed, type LetterFile, type LetterLanguage, type LetterVersion } from '../shared/letter.ts';
 import { parseProfile } from '../shared/profile.ts';
 import { detectLanguage } from './letter/language.ts';
 import { fillTemplate } from './letter/template.ts';
@@ -102,7 +102,9 @@ export function createApp(options: AppOptions = {}) {
   app.post('/api/letters/:refnr/generate', async (c) => {
     const refnr = c.req.param('refnr');
     if (!REFNR.test(refnr)) return c.json({ error: 'Invalid reference number.' }, 400);
-    const body = (await c.req.json().catch(() => ({}))) as { language?: unknown; mode?: unknown };
+    const body = (await c.req.json().catch(() => ({}))) as { language?: unknown; mode?: unknown; confirmed?: unknown };
+    const confirmed = parseConfirmed(body.confirmed);
+    if (confirmed === null) return c.json({ error: 'Invalid confirmed points.' }, 400);
     const choice = body.language ?? 'auto';
     if (!isLanguageChoice(choice)) return c.json({ error: 'Invalid language.' }, 400);
     const mode = body.mode ?? (generator ? 'ai' : 'template');
@@ -115,8 +117,15 @@ export function createApp(options: AppOptions = {}) {
     const file = await lettersFor(refnr, job);
 
     if (mode === 'ai' && generator) {
-      const result = await generator({ profile, job, language });
-      const version = await addVersion(file, { source: 'claude', language, text: result.letter, adKeywords: result.adKeywords, missing: result.missing.length ? result.missing : undefined });
+      const result = await generator({ profile, job, language, confirmed });
+      const version = await addVersion(file, {
+        source: 'claude',
+        language,
+        text: result.letter,
+        adKeywords: result.adKeywords,
+        missing: result.missing.length ? result.missing : undefined,
+        confirmed: confirmed?.length ? confirmed : undefined,
+      });
       return c.json({ file, version });
     }
     const version = await addVersion(file, { source: 'template', language, text: fillTemplate(profile, job, language) });

@@ -74,6 +74,8 @@ export const es: Messages = {
     copyFailed: 'No se ha podido copiar. Selecciona el texto y pulsa Ctrl+C.',
     replaceConfirm: '¿Sustituir tus cambios sin guardar por una carta nueva?',
     leftOut: 'No está en tu perfil, así que Claude lo ha dejado fuera de la carta. Añádelo tú si corresponde:',
+    leftOutTick: 'No está en tu perfil, así que Claude lo ha dejado fuera de la carta. Marca lo que quieras incluir y pulsa Volver a escribir:',
+    regenerate: 'Volver a escribir',
     placeholdersLeft: (n) => `Quedan ${n} marcadores por completar: busca los [corchetes].`,
     history: (n) => `Versiones anteriores (${n})`,
     historyHint: 'Abre una versión para seguir trabajando con ella. Guardar crea una versión nueva; no se sobrescribe nada.',

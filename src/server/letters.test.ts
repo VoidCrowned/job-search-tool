@@ -104,6 +104,23 @@ describe('letters API with Claude', () => {
     expect(((generator.mock.calls[0] as unknown[])[0] as { profile: { name: string } }).profile.name).toBe('Void Example');
   });
 
+  it('passes ticked points to Claude as confirmed and stores them', async () => {
+    const generator = vi.fn(async () => ({ letter: 'Claude letter', adKeywords: [], missing: [] }));
+    const res = await postAi(generator, { language: 'de', mode: 'ai', confirmed: [' Umzug nach Berlin ', 'Umzug nach Berlin', 'Führerschein'] });
+    const { version } = (await res.json()) as { version: LetterVersion };
+    expect(version.confirmed).toEqual(['Umzug nach Berlin', 'Führerschein']);
+    expect(version).not.toHaveProperty('missing');
+    expect(generator).toHaveBeenCalledWith(expect.objectContaining({ confirmed: ['Umzug nach Berlin', 'Führerschein'] }));
+  });
+
+  it('rejects invalid confirmed points', async () => {
+    const generator = vi.fn();
+    for (const confirmed of ['x', [1], [''], ['x'.repeat(301)], Array.from({ length: 21 }, (_, i) => `p${i}`)]) {
+      expect((await postAi(generator, { mode: 'ai', confirmed })).status).toBe(400);
+    }
+    expect(generator).not.toHaveBeenCalled();
+  });
+
   it('still fills the template when asked', async () => {
     const generator = vi.fn();
     const { version } = (await (await postAi(generator, { mode: 'template' })).json()) as { version: LetterVersion };
