@@ -99,4 +99,24 @@ describe('browser backend', () => {
     expect(err).toBeInstanceOf(RequestError);
     expect(err).toMatchObject({ status: 422, code: 'AI_REFUSED' });
   });
+
+  it('exports everything (key only when asked) and imports it into another browser', async () => {
+    const a = setup();
+    await a.backend.saveProfile({ ...emptyProfile(), name: 'Void' });
+    await a.backend.setKey(OR_KEY);
+    await a.backend.generateLetter(ref, { language: 'de', mode: 'template' });
+    const without = await a.backend.exportData(false);
+    expect(without.apiKey).toBeUndefined();
+    const backup = await a.backend.exportData(true);
+    expect(backup).toMatchObject({ app: 'job-search-tool', version: 1, apiKey: OR_KEY, profile: { name: 'Void' } });
+    expect(backup.letters).toHaveLength(1);
+
+    const b = setup();
+    await b.backend.saveVersion(ref, { text: 'Already here', language: 'de' });
+    expect(await b.backend.importData(JSON.parse(JSON.stringify(backup)))).toEqual({ letters: 1 });
+    expect((await b.backend.getProfile()).name).toBe('Void');
+    expect((await b.backend.getLetters(ref)).versions).toHaveLength(2);
+    expect(b.getKey()).toBeNull();
+    await expect(b.backend.importData({ nope: true } as never)).rejects.toMatchObject({ code: 'INVALID_BACKUP' });
+  });
 });

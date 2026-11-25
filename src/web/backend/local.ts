@@ -2,6 +2,7 @@
 import type { JobDetails, SearchResponse } from '../../api/types.ts';
 import type { LetterFile } from '../../shared/letter.ts';
 import type { Profile } from '../../shared/profile.ts';
+import type { Backup } from '../../shared/backup.ts';
 import { deleteJson, getJson, sendJson } from '../api.ts';
 import type { AiConfig, Backend, KeyStatus, LetterResult } from './types.ts';
 
@@ -19,6 +20,9 @@ export const localBackend: Backend = {
   getLetters: (refnr) => getJson<LetterFile>(letters(refnr)),
   generateLetter: (refnr, request) => sendJson<LetterResult>('POST', `${letters(refnr)}/generate`, request),
   saveVersion: (refnr, version) => sendJson<LetterResult>('POST', `${letters(refnr)}/versions`, version),
+
+  exportData: () => getJson<Backup>('/api/backup'),
+  importData: (backup) => sendJson<{ letters: number }>('POST', '/api/backup', backup),
 
   aiConfig: () => getJson<AiConfig>('/api/config'),
   keyStatus: () => getJson<KeyStatus>('/api/settings/key'),

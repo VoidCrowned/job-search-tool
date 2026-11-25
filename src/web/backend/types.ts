@@ -3,6 +3,7 @@
 import type { JobDetails, SearchResponse } from '../../api/types.ts';
 import type { LanguageChoice, LetterFile, LetterLanguage, LetterVersion } from '../../shared/letter.ts';
 import type { Profile } from '../../shared/profile.ts';
+import type { Backup } from '../../shared/backup.ts';
 
 export interface AiConfig {
   ai: boolean;
@@ -43,6 +44,11 @@ export interface Backend {
   getLetters(refnr: string): Promise<LetterFile>;
   generateLetter(refnr: string, request: GenerateRequest): Promise<LetterResult>;
   saveVersion(refnr: string, version: { text: string; language: LetterLanguage }): Promise<LetterResult>;
+
+  /** Everything personal as one file. `includeKey` only has an effect online (locally the key stays in .env). */
+  exportData(includeKey: boolean): Promise<Backup>;
+  /** Replaces the profile and adds the letters to the existing ones. The key (if any) is set separately. */
+  importData(backup: Backup): Promise<{ letters: number }>;
 
   aiConfig(): Promise<AiConfig>;
   keyStatus(): Promise<KeyStatus>;

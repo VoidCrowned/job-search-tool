@@ -1,5 +1,5 @@
 // Local file storage for personal data (profile, letters). Lives in data/ by default, which git ignores.
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { MAX_VERSIONS, type LetterFile } from '../shared/letter.ts';
 import { emptyProfile, parseProfile, type Profile } from '../shared/profile.ts';
@@ -10,6 +10,8 @@ export interface Storage {
   writeProfile(profile: Profile): Promise<void>;
   readLetters(refnr: string): Promise<LetterFile | undefined>;
   writeLetters(file: LetterFile): Promise<void>;
+  /** Every job's letters, for the backup file. */
+  listLetters(): Promise<LetterFile[]>;
 }
 
 /** Reference numbers become file names: keep only safe characters. */
@@ -57,6 +59,14 @@ export function createStorage(dir: string = process.env.DATA_DIR ?? 'data'): Sto
       await mkdir(lettersDir, { recursive: true });
       const versions = file.versions.slice(-MAX_VERSIONS);
       await writeJson(join(lettersDir, letterFileName(file.refnr)), { ...file, versions });
+    },
+    async listLetters() {
+      const names = await readdir(lettersDir).catch((err: NodeJS.ErrnoException) => {
+        if (err.code === 'ENOENT') return [] as string[];
+        throw err;
+      });
+      const files = await Promise.all(names.filter((n) => n.endsWith('.json')).map((n) => readJson(join(lettersDir, n))));
+      return files.filter((f): f is LetterFile => Boolean(f) && Array.isArray((f as LetterFile).versions));
     },
   };
 }

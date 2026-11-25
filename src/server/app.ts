@@ -12,6 +12,7 @@ import { createStorage, type Storage } from './storage.ts';
 import { updateEnvFile } from './envFile.ts';
 import { isValidApiKey, keyHint } from '../shared/apiKey.ts';
 import { describeError } from '../shared/errors.ts';
+import { makeBackup, mergeLetterFiles, parseBackup } from '../shared/backup.ts';
 
 export interface AppOptions {
   client?: JobsucheClient;
@@ -183,6 +184,19 @@ export function createApp(options: AppOptions = {}) {
   });
 
   app.get('/api/profile', async (c) => c.json(await storage.readProfile()));
+
+  // Backup: the local version never puts the API key into the file (it stays in .env).
+  app.get('/api/backup', async (c) => c.json(makeBackup(await storage.readProfile(), await storage.listLetters())));
+
+  app.post('/api/backup', async (c) => {
+    const { backup, error } = parseBackup(await c.req.json().catch(() => undefined));
+    if (!backup) return c.json({ error: error ?? 'Invalid backup.', code: 'INVALID_BACKUP' }, 400);
+    await storage.writeProfile(backup.profile);
+    for (const imported of backup.letters) {
+      await storage.writeLetters(mergeLetterFiles(await storage.readLetters(imported.refnr), imported));
+    }
+    return c.json({ letters: backup.letters.length });
+  });
 
   app.put('/api/profile', async (c) => {
     const body: unknown = await c.req.json().catch(() => undefined);

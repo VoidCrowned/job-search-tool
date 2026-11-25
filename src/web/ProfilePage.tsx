@@ -1,4 +1,5 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { backupFileName, parseBackup } from '../shared/backup.ts';
 import exampleProfile from '../../examples/profile.example.json';
 import { isProfileEmpty, MAX_LENGTH, MULTILINE_FIELDS, parseProfile, type Profile, type ProfileField } from '../shared/profile.ts';
 import { errorText, RequestError, useLoad } from './api.ts';
@@ -13,7 +14,9 @@ const SECTIONS: { key: 'personal' | 'goals' | 'cv'; fields: ProfileField[] }[] =
 
 export function ProfilePage() {
   const t = useT();
-  const result = useLoad<Profile>('profile', (signal) => backend.getProfile(signal));
+  // Bumped after an import, so the form and the key section show the imported data.
+  const [generation, setGeneration] = useState(0);
+  const result = useLoad<Profile>(`profile:${generation}`, (signal) => backend.getProfile(signal));
 
   useEffect(() => {
     document.title = t.app.pageTitle(t.profile.title);
@@ -25,8 +28,9 @@ export function ProfilePage() {
       <p className="hint">{isHosted ? t.profile.introOnline : t.profile.intro}</p>
       {result.state === 'loading' && <p className="hint">{t.profile.loading}</p>}
       {result.state === 'error' && <p className="error">{errorText(result.error, t)}</p>}
-      <KeySettings />
-      {result.state === 'done' && <ProfileForm initial={result.data} />}
+      <KeySettings key={`key:${generation}`} />
+      {result.state === 'done' && <ProfileForm key={generation} initial={result.data} />}
+      <BackupSection onImported={() => setGeneration((g) => g + 1)} />
     </article>
   );
 }
@@ -150,6 +154,105 @@ function EyeIcon({ crossed }: { crossed: boolean }) {
       <circle cx="12" cy="12" r="3" />
       {crossed && <path d="M3 3l18 18" />}
     </svg>
+  );
+}
+
+type BackupState =
+  | { kind: 'idle' }
+  | { kind: 'working' }
+  | { kind: 'exported'; letters: number }
+  | { kind: 'imported'; letters: number; skipped: number }
+  | { kind: 'error'; error: RequestError };
+
+/** Export everything to one file, or import such a file (another browser or computer, or a kept copy). */
+function BackupSection({ onImported }: { onImported: () => void }) {
+  const t = useT();
+  const [includeKey, setIncludeKey] = useState(false);
+  const [state, setState] = useState<BackupState>({ kind: 'idle' });
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function exportData() {
+    setState({ kind: 'working' });
+    try {
+      const data = await backend.exportData(isHosted && includeKey);
+      const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = backupFileName();
+      link.click();
+      URL.revokeObjectURL(url);
+      setState({ kind: 'exported', letters: data.letters.length });
+    } catch (err) {
+      setState({ kind: 'error', error: toRequestError(err) });
+    }
+  }
+
+  async function importFile(file: File) {
+    let parsed: ReturnType<typeof parseBackup>;
+    try {
+      parsed = parseBackup(JSON.parse(await file.text()));
+    } catch {
+      parsed = { skipped: 0, error: 'invalid' };
+    }
+    const { backup, skipped } = parsed;
+    if (!backup) {
+      setState({ kind: 'error', error: new RequestError(400, 'Invalid backup.', 'INVALID_BACKUP') });
+      return;
+    }
+    if (!window.confirm(t.profile.backup.importConfirm(backup.letters.length))) return;
+    setState({ kind: 'working' });
+    try {
+      const { letters } = await backend.importData(backup);
+      if (backup.apiKey) await backend.setKey(backup.apiKey);
+      setState({ kind: 'imported', letters, skipped });
+      onImported();
+    } catch (err) {
+      setState({ kind: 'error', error: toRequestError(err) });
+    }
+  }
+
+  return (
+    <section className="profile-section backup-section" aria-labelledby="backup-title">
+      <h2 id="backup-title" className="section-title">
+        {t.profile.backup.title}
+      </h2>
+      <p className="hint">{t.profile.backup.intro}</p>
+      {isHosted && (
+        <label className="check">
+          <input type="checkbox" checked={includeKey} onChange={(e) => setIncludeKey(e.target.checked)} />
+          {t.profile.backup.includeKey}
+        </label>
+      )}
+      <div className="key-actions">
+        <button type="button" className="button" onClick={exportData} disabled={state.kind === 'working'}>
+          {t.profile.backup.export}
+        </button>
+        <button type="button" className="button" onClick={() => fileRef.current?.click()} disabled={state.kind === 'working'}>
+          {t.profile.backup.import}
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/json,.json"
+          hidden
+          data-testid="backup-file"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = '';
+            if (file) void importFile(file);
+          }}
+        />
+      </div>
+      <span aria-live="polite" className={state.kind === 'error' ? 'error' : 'hint'}>
+        {state.kind === 'error'
+          ? errorText(state.error, t)
+          : state.kind === 'exported'
+            ? t.profile.backup.exported(state.letters)
+            : state.kind === 'imported'
+              ? t.profile.backup.imported(state.letters, state.skipped)
+              : ''}
+      </span>
+    </section>
   );
 }
 
