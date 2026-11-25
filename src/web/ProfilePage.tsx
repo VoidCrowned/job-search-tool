@@ -44,6 +44,7 @@ function KeySettings() {
   const [status, setStatus] = useState<KeyStatus | undefined>();
   const [key, setKey] = useState('');
   const [state, setState] = useState<KeyState>({ kind: 'idle' });
+  const [reveal, setReveal] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -76,31 +77,43 @@ function KeySettings() {
     void run(() => deleteJson<KeyStatus>('/api/settings/key'), { kind: 'removed' });
   }
 
-  const provider = status?.provider === 'anthropic' ? 'Anthropic' : 'OpenRouter';
+  const typed = key.trim() !== '';
   return (
     <form className="key-settings" onSubmit={save}>
       <fieldset className="profile-section key-section">
         <legend>{t.profile.key.title}</legend>
         <div className="key-info">
           <p className="hint">{t.profile.key.intro}</p>
-          {status && <p>{status.set ? t.profile.key.isSet(provider, status.hint ?? '') : t.profile.key.notSet}</p>}
         </div>
         <div className="key-entry">
           <div className="profile-field">
-            <label htmlFor="api-key">{status?.set ? t.profile.key.replaceLabel : t.profile.key.label}</label>
-            <input
-              id="api-key"
-              type="password"
-              autoComplete="off"
-              spellCheck={false}
-              value={key}
-              onChange={(e) => setKey(e.target.value)}
-              placeholder="sk-or-…"
-            />
+            <label htmlFor="api-key">{t.profile.key.label}</label>
+            <div className="secret-input">
+              <input
+                id="api-key"
+                type={reveal ? 'text' : 'password'}
+                autoComplete="off"
+                spellCheck={false}
+                value={key}
+                onChange={(e) => setKey(e.target.value)}
+                // The saved key never reaches the browser; its short hint stands in for it.
+                placeholder={status?.set ? status.hint : 'sk-or-…'}
+              />
+              <button
+                type="button"
+                className="reveal"
+                onClick={() => setReveal((r) => !r)}
+                aria-label={reveal ? t.profile.key.hide : t.profile.key.show}
+                aria-pressed={reveal}
+                title={reveal ? t.profile.key.hide : t.profile.key.show}
+              >
+                <EyeIcon crossed={reveal} />
+              </button>
+            </div>
           </div>
           <div className="key-actions">
-            <button type="submit" className="primary" disabled={!key.trim() || state.kind === 'working'}>
-              {t.profile.key.save}
+            <button type="submit" className="primary" disabled={!typed || state.kind === 'working'}>
+              <StableLabel labels={[t.profile.key.save, t.profile.key.isSetButton]} show={typed || !status?.set ? 0 : 1} />
             </button>
             {status?.set && (
               <button type="button" className="button" onClick={remove} disabled={state.kind === 'working'}>
@@ -109,17 +122,37 @@ function KeySettings() {
             )}
           </div>
           <span aria-live="polite" className={state.kind === 'error' ? 'error' : 'hint'}>
-            {state.kind === 'error'
-              ? errorText(state.error, t)
-              : state.kind === 'saved'
-                ? t.profile.key.saved
-                : state.kind === 'removed'
-                  ? t.profile.key.removed
-                  : ''}
+            {state.kind === 'error' ? errorText(state.error, t) : state.kind === 'removed' ? t.profile.key.removed : ''}
           </span>
         </div>
       </fieldset>
     </form>
+  );
+}
+
+/**
+ * A button label that switches text without changing the button's size: every label takes up the same
+ * grid cell, and only the one shown is visible. So the widest label sets the width.
+ */
+function StableLabel({ labels, show }: { labels: string[]; show: number }) {
+  return (
+    <span className="stable-label">
+      {labels.map((label, i) => (
+        <span key={i} aria-hidden={i !== show} className={i === show ? undefined : 'stable-label-hidden'}>
+          {label}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function EyeIcon({ crossed }: { crossed: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+      <circle cx="12" cy="12" r="3" />
+      {crossed && <path d="M3 3l18 18" />}
+    </svg>
   );
 }
 
@@ -199,19 +232,15 @@ function ProfileForm({ initial }: { initial: Profile }) {
         </fieldset>
       ))}
       <div className="form-actions">
-        <button type="submit" className="primary" disabled={status.kind === 'saving'}>
-          {status.kind === 'saving' ? t.profile.saving : t.profile.save}
+        <button type="submit" className="primary" disabled={!dirty || status.kind === 'saving'}>
+          {/* "Saved" while the form matches what is stored; "Save profile" as soon as anything differs. */}
+          <StableLabel
+            labels={[t.profile.save, t.profile.saving, t.profile.saved]}
+            show={status.kind === 'saving' ? 1 : dirty ? 0 : 2}
+          />
         </button>
         <span aria-live="polite" className={status.kind === 'error' ? 'error' : 'hint'}>
-          {status.kind === 'error'
-            ? errorText(status.error, t)
-            : status.kind === 'example'
-              ? t.profile.exampleLoaded
-              : dirty
-                ? t.profile.unsaved
-                : status.kind === 'saved'
-                  ? t.profile.saved
-                  : ''}
+          {status.kind === 'error' ? errorText(status.error, t) : status.kind === 'example' && dirty ? t.profile.exampleLoaded : ''}
         </span>
       </div>
     </form>
